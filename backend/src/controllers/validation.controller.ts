@@ -1,5 +1,8 @@
 import type { Request, Response } from "express";
-import { runValidation } from "../services/validation.service.js";
+import {
+  ChallengeValidationError,
+  validateChallenge as validateChallengeService,
+} from "../services/challenge.service.js";
 
 export async function validateChallenge(
   req: Request,
@@ -7,7 +10,7 @@ export async function validateChallenge(
 ): Promise<void> {
   try {
     const { challengeId } = req.params;
-    const { files } = req.body;
+    const files: unknown = req.body?.files;
 
     if (typeof challengeId !== "string") {
       res.status(400).json({
@@ -17,13 +20,27 @@ export async function validateChallenge(
       return;
     }
 
-    const result = await runValidation(challengeId, files);
+    if (!Array.isArray(files)) {
+      res.status(400).json({
+        success: false,
+        message: "files debe ser un arreglo",
+      });
+      return;
+    }
+
+    const result = await validateChallengeService(challengeId, files);
 
     res.json(result);
-  } catch {
-    res.status(500).json({
+  } catch (error) {
+    const statusCode =
+      error instanceof ChallengeValidationError ? error.statusCode : 500;
+
+    res.status(statusCode).json({
       success: false,
-      message: "Error al validar la solución",
+      message:
+        error instanceof ChallengeValidationError
+          ? error.message
+          : "Error al validar la solución",
     });
   }
 }
