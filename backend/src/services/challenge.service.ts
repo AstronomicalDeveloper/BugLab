@@ -12,14 +12,14 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * `challenges/` está en la raíz del monorepo, fuera de `backend/`. Se resuelve
- * desde la ubicación de este módulo y no desde `process.cwd()`, para que dé
- * igual desde qué carpeta se arranque el servidor.
+ * `challenges/` vive dentro de `backend/`. Se resuelve desde la ubicación de
+ * este módulo y no desde `process.cwd()`, para que dé igual desde qué carpeta
+ * se arranque el servidor.
  *
  * Funciona igual compilado: tanto `backend/src/services/` como
- * `backend/dist/services/` quedan a tres niveles de la raíz.
+ * `backend/dist/services/` quedan a dos niveles de `backend/`.
  */
-const CHALLENGES_DIR = path.resolve(HERE, "..", "..", "..", "challenges");
+const CHALLENGES_DIR = path.resolve(HERE, "..", "..", "challenges");
 
 /** Ids permitidos. Bloquea `..`, separadores y cualquier salto de carpeta. */
 const VALID_ID = /^[A-Za-z0-9._-]+$/;

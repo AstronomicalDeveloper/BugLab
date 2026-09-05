@@ -4,36 +4,74 @@
  * Todo vive bajo `.challenge-root` a propósito: no se declara nada en `:root`
  * para que el shell general de la app no vea ni pueda pisar estas variables.
  * Todos los nombres llevan el prefijo `--challenge-*`.
+ *
+ * ---------------------------------------------------------------------------
+ * Paleta alineada con el shell (Propuesta_interfaz_BugLab.md §15-17).
+ *
+ * Los NOMBRES de las variables no cambiaron: `challenge.css` y los componentes
+ * siguen funcionando sin tocarse. Lo que cambió son los valores, de la paleta
+ * pastel clara a la Liquid Glass oscura del shell.
+ *
+ * Ojo con la semántica de los sufijos, que se invierte respecto del tema claro:
+ *   `--x`          color base, vivo. Bordes marcados, barras, puntos.
+ *   `--x-light`    borde de las superficies tintadas (antes: tinte hacia blanco).
+ *   `--x-lighter`  relleno de las superficies tintadas. Ahora es translúcido:
+ *                  deja pasar el vidrio en vez de taparlo.
+ *   `--x-text`     texto legible SOBRE ese relleno. En oscuro es la versión
+ *                  clara del color, no la oscura.
+ * ---------------------------------------------------------------------------
  */
 
 .challenge-root {
-  /* Paleta — definida por el equipo, no modificar aquí. */
-  --challenge-green: #7ccdb0;
-  --challenge-green-light: #cff4e5;
-  --challenge-green-lighter: #ecfbf5;
-  --challenge-green-text: #246b55;
+  /* Verde — éxito, test superado, caso resuelto. */
+  --challenge-green: #3fcf8e;
+  --challenge-green-light: rgba(63, 207, 142, 0.35);
+  --challenge-green-lighter: rgba(63, 207, 142, 0.1);
+  --challenge-green-text: #7ee2b4;
 
-  --challenge-purple: #a998e8;
-  --challenge-purple-light: #ddd5fa;
-  --challenge-purple-lighter: #f3f0ff;
-  --challenge-purple-text: #58478f;
+  /* Morado — navegación activa, selección, foco. Lo que marca DÓNDE estás. */
+  --challenge-purple: #8b7cf6;
+  --challenge-purple-light: rgba(139, 124, 246, 0.38);
+  --challenge-purple-lighter: rgba(139, 124, 246, 0.12);
+  --challenge-purple-text: #c9c2ff;
 
-  --challenge-bg: #f6f8fb;
-  --challenge-text-primary: #263238;
-  --challenge-text-secondary: #64727d;
-  --challenge-border: rgba(255, 255, 255, 0.65);
+  /* Azul — acciones principales. Lo que marca QUÉ PODÉS HACER. */
+  --challenge-action: #70a5ff;
+  --challenge-action-hover: #8ab6ff;
+  /* Texto sobre el azul sólido del botón primario. */
+  --challenge-action-ink: #0c1220;
 
-  /* Sin hex oficial del equipo todavía: pastel a la misma saturación que el
-     verde y el morado de arriba. Pendiente de unificar con el shell. */
-  --challenge-red: #e8a0a0;
-  --challenge-red-light: #f7dcdc;
-  --challenge-red-lighter: #fdf1f1;
-  --challenge-red-text: #8f4646;
+  --challenge-bg: #11131a;
+  --challenge-panel: #1a1d27;
+  --challenge-text-primary: #f4f5f7;
+  --challenge-text-secondary: #a7adbb;
+  --challenge-border: rgba(255, 255, 255, 0.08);
 
-  --challenge-yellow: #e8d28f;
-  --challenge-yellow-light: #f7edcf;
-  --challenge-yellow-lighter: #fdf9ee;
-  --challenge-yellow-text: #8f7a2e;
+  /* Rojo — error, test fallido. */
+  --challenge-red: #ff6b6b;
+  --challenge-red-light: rgba(255, 107, 107, 0.35);
+  --challenge-red-lighter: rgba(255, 107, 107, 0.1);
+  --challenge-red-text: #ff9b9b;
+
+  /* Amarillo — pistas y advertencias. */
+  --challenge-yellow: #f5c24c;
+  --challenge-yellow-light: rgba(245, 194, 76, 0.32);
+  --challenge-yellow-lighter: rgba(245, 194, 76, 0.09);
+  --challenge-yellow-text: #f2d18b;
+
+  /*
+   * Rellenos y hairlines neutros. En el tema claro esto se resolvía con
+   * `rgba(255,255,255,x)` para las superficies y `rgba(38,50,56,x)` para los
+   * bordes; sobre fondo oscuro ambos son blanco translúcido a distinta alfa.
+   */
+  --challenge-fill-soft: rgba(255, 255, 255, 0.03);
+  --challenge-fill: rgba(255, 255, 255, 0.06);
+  --challenge-fill-strong: rgba(255, 255, 255, 0.1);
+  --challenge-hairline: rgba(255, 255, 255, 0.08);
+  --challenge-hairline-strong: rgba(255, 255, 255, 0.14);
+
+  /* Fondo del código. Más sólido que el vidrio: la legibilidad manda (§15). */
+  --challenge-code-bg: #0e1016;
 
   /* Espaciado — escala de 4px. */
   --challenge-space-1: 4px;
@@ -48,11 +86,11 @@
   --challenge-radius-md: 12px;
   --challenge-radius-lg: 16px;
 
-  /* Tipografía. */
+  /* Tipografía — las mismas dos familias que el shell (§17). */
   --challenge-font-sans: "Inter", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", sans-serif;
-  --challenge-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono",
-    "Roboto Mono", Menlo, Consolas, monospace;
+  --challenge-font-mono: "JetBrains Mono", ui-monospace, "SF Mono",
+    "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
 
   --challenge-text-xs: 11.5px;
   --challenge-text-sm: 13px;
@@ -61,11 +99,13 @@
   --challenge-text-xl: 26px;
 
   /* Sombra base compartida por los tres niveles de vidrio. */
-  --challenge-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --challenge-shadow: 0 8px 32px rgba(0, 0, 0, 0.38);
   /* Brillo interior discreto, característico del estilo. */
-  --challenge-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --challenge-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
-  --challenge-focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px var(--challenge-purple);
+  /* El anillo interior es del color del fondo, no blanco como en el tema claro. */
+  --challenge-focus-ring: 0 0 0 2px var(--challenge-bg), 0 0 0 4px
+    var(--challenge-purple);
 }
 
 /* ------------------------- Niveles de vidrio ------------------------------ */
@@ -78,21 +118,23 @@
 
 /* Nivel 1 — vidrio más perceptible: modal y pestañas del editor. */
 .challenge-surface--level-1 {
-  background: rgba(255, 255, 255, 0.38);
+  background: color-mix(in srgb, var(--challenge-panel) 62%, transparent);
+  border-color: var(--challenge-hairline-strong);
   backdrop-filter: blur(24px) saturate(140%);
   -webkit-backdrop-filter: blur(24px) saturate(140%);
 }
 
 /* Nivel 2 — vidrio medio: paneles de contexto. */
 .challenge-surface--level-2 {
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  background: color-mix(in srgb, var(--challenge-panel) 45%, transparent);
+  backdrop-filter: blur(16px) saturate(125%);
+  -webkit-backdrop-filter: blur(16px) saturate(125%);
 }
 
 /* Nivel 3 — fondo más sólido: resultados de tests. Legibilidad sobre estilo. */
 .challenge-surface--level-3 {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: color-mix(in srgb, var(--challenge-code-bg) 92%, transparent);
+  border-color: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
