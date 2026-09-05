@@ -33,7 +33,7 @@
 
 ---
 
-## 3. Stack Tecnológico & IA
+## 3. Stack Tecnológico 
 
 | Capa | Tecnología | Rol |
 |---|---|---|
@@ -43,9 +43,6 @@
 | ✅ Testing | Vitest + React Testing Library | Validación de comportamiento |
 | 📦 Datos | JSON | Reportes, arquitectura, pistas, explicaciones |
 | 💾 Progreso | localStorage | Progreso local opcional, sin cuentas |
-
-**Servicios cloud:** ninguno en esta fase (se definirá en el despliegue de Fase 2).
-**Modelos de IA:** no aplica en este MVP.
 
 ---
 
