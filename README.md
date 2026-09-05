@@ -1,7 +1,6 @@
 <div align="center">
 
 # 🐛 BugLab
-### Entorno Educativo de Debugging
 
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Vite](https://img.shields.io/badge/Vite-Fast-646CFF?style=for-the-badge&logo=vite&logoColor=white)
@@ -10,24 +9,21 @@
 ![Vitest](https://img.shields.io/badge/Vitest-Testing-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 ![Status](https://img.shields.io/badge/Estado-En%20Desarrollo-orange?style=for-the-badge)
 
-> **Hackathon BRODT — Track: Future of Education**
-> Aplicación web que convierte el debugging en una experiencia guiada de investigación: sistemas simulados, bugs reales, y validación por comportamiento.
-
 </div>
 
----
+## 1. Nombre y Misión
 
-## 🧠 Descripción del Proyecto
-
-**BugLab** es un entorno educativo que enseña a investigar y resolver fallos reales dentro de sistemas simulados. En vez de ejercicios aislados tipo "encuentra el error en esta línea", cada reto presenta un sistema completo con reporte de bug, arquitectura, árbol de archivos y código editable — el estudiante formula hipótesis, interviene el código y valida con tests automáticos.
-
-Está dirigido a estudiantes universitarios de software, participantes de bootcamps y autodidactas que ya conocen fundamentos de programación y necesitan practicar cómo investigar fallos reales, no solo escribir código desde cero.
-
-> ⚠️ **Importante:** la ejecución de código de los estudiantes corre aislada en sandbox/Docker, sin acceso al sistema anfitrión.
+**BugLab** — entorno educativo de debugging que enseña a investigar y resolver fallos reales dentro de sistemas simulados, mediante retos con reporte, arquitectura y tests automáticos.
 
 ---
 
-## 🎯 Desafíos del MVP
+## 2. Problema & Enfoque Lean
+
+**Problema:** los estudiantes de programación tienen pocas oportunidades de practicar debugging estructurado sobre código ajeno; la mayoría de ejercicios enseña a escribir código desde cero, no a diagnosticar fallos existentes.
+
+**Usuario objetivo:** estudiantes universitarios de software, participantes de bootcamps y autodidactas que ya conocen fundamentos de programación y necesitan practicar cómo investigar fallos.
+
+**MVP:** 3 desafíos de debugging (fácil, intermedio y difícil) cada uno con reporte de bug, arquitectura simplificada, árbol de archivos, código editable, pistas progresivas, tests de comportamiento automáticos y explicación final — sin autenticación, sin base de datos ni panel administrativo.
 
 ```
 🟢  BUG-001 — FÁCIL         Condición excluye usuarios de 18 años exactos
@@ -35,11 +31,9 @@ Está dirigido a estudiantes universitarios de software, participantes de bootca
 🔴  BUG-003 — DIFÍCIL       Filtro muta el inventario original por referencia
 ```
 
-Cada caso se resuelve siguiendo el flujo: **Leer reporte → Revisar arquitectura → Editar código → Ejecutar tests → Pistas (opcional) → Explicación final.**
-
 ---
 
-## 🧱 Stack Tecnológico
+## 3. Stack Tecnológico & IA
 
 | Capa | Tecnología | Rol |
 |---|---|---|
@@ -50,63 +44,23 @@ Cada caso se resuelve siguiendo el flujo: **Leer reporte → Revisar arquitectur
 | 📦 Datos | JSON | Reportes, arquitectura, pistas, explicaciones |
 | 💾 Progreso | localStorage | Progreso local opcional, sin cuentas |
 
-**IA:** no aplica en este MVP.
+**Servicios cloud:** ninguno en esta fase (se definirá en el despliegue de Fase 2).
+**Modelos de IA:** no aplica en este MVP.
 
 ---
 
-## 📁 Estructura del Proyecto
-
-```
-BugLab/
-│
-├── 📂 backend/
-│   ├── 📂 challenges/
-│   │   ├── BUG-001/
-│   │   ├── BUG-002/
-│   │   └── BUG-003/
-│   ├── 📂 docker/          ← Aislamiento de ejecución
-│   ├── 📂 sandbox/         ← Entorno seguro de validación
-│   ├── 📂 src/
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── vitest.config.ts
-│
-├── 📂 frontend/
-│   ├── 📂 src/
-│   ├── index.html
-│   ├── vite.config.ts
-│   ├── eslint.config.js
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── 📂 docs/
-│   └── architecture.md
-│
-└── 📄 README.md
-```
-
----
-
-## 🚀 Instalación y Ejecución
-
-### Clonar el repositorio
+## 4. Setup Local
 
 ```bash
 git clone https://github.com/AstronomicalDeveloper/BugLab
 cd BugLab
-```
 
-### Backend
-
-```bash
+# Backend
 cd backend
 npm install
 npm run dev
-```
 
-### Frontend (en otra terminal)
-
-```bash
+# Frontend (en otra terminal)
 cd frontend
 npm install
 npm run dev
@@ -114,23 +68,11 @@ npm run dev
 
 ---
 
-## 👥 Integrantes y Roles
+## 5. Integrantes & Roles
 
-| Nombre | GitHub | Rol principal |
+| Nombre completo | Usuario de GitHub | Rol |
 |---|---|---|
-| Piero Alfonso Paredes Galvez | @pieroparedesg | Diseño y creación de retos (bugs) |
-| Wilson Oswaldo Carrasco Farroñan | @WilsonOCF | Frontend |
-| Bastian Arias Mandarachi | @Armand-Pat| Frontend |
-| Landry Nicol Bardales Guadalupe | @AstronomicalDeveloper | Backend |
-
-> Equipo horizontal: todos colaboraron en distintas partes del proyecto además de su rol principal.
-
----
-
-<div align="center">
-
-**Hackathon BRODT 2026 — Track Future of Education**
-
-*Aprender a leer código ajeno, un bug a la vez.*
-
-</div>
+| Piero Alfonso Paredes Galvez | @AstronomicalDeveloper | Diseño y creación de retos (bugs) |
+| Wilson Oswaldo Carrasco Farroñan | @usuario | Frontend |
+| Bastian Arias Mandarachi | @usuario | Frontend |
+| Landry Nicol Bardales Guadalupe | @usuario | Backend |
