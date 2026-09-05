@@ -33,7 +33,7 @@
 
 ---
 
-## 3. Stack Tecnológico 
+## 3. Stack Tecnológico & IA
 
 | Capa | Tecnología | Rol |
 |---|---|---|
@@ -43,6 +43,9 @@
 | ✅ Testing | Vitest + React Testing Library | Validación de comportamiento |
 | 📦 Datos | JSON | Reportes, arquitectura, pistas, explicaciones |
 | 💾 Progreso | localStorage | Progreso local opcional, sin cuentas |
+
+**Servicios cloud:** ninguno en esta fase (se definirá en el despliegue de Fase 2).
+**Modelos de IA:** no aplica en este MVP.
 
 ---
 
@@ -71,5 +74,5 @@ npm run dev
 |---|---|---|
 | Piero Alfonso Paredes Galvez | @pieroparedesg | Diseño y creación de retos (bugs) |
 | Wilson Oswaldo Carrasco Farroñan | @WilsonOCF | Frontend |
-| Bastian Arias Mandarachi | @Armand-Pat | Frontend |
+| Bastian Arias Mandarachi | @Armand-Pat| Frontend |
 | Landry Nicol Bardales Guadalupe | @AstronomicalDeveloper | Backend |
