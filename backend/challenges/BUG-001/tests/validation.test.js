@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAgeValid } from "../files/validation.js";
+import { isAgeValid } from "../src/utils/validation.js";
 
 describe("isAgeValid", () => {
   it("Acepta edad = 18", () => expect(isAgeValid(18)).toBe(true));

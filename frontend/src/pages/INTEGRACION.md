@@ -58,6 +58,7 @@ Fonts está en `frontend/index.html`; si el shell ya carga Inter, ese link sobra
 
 ## Datos
 
-Mientras `GET /api/challenges/:id` no exista en el backend, el caso se lee de
-`src/mocks/`. Para apagar el mock: `USE_MOCK = false` en `src/services/api.ts`.
+El caso se lee desde `GET /api/challenges/:id`; `USE_MOCK = false` en
+`src/services/api.ts`. Para trabajar temporalmente sin backend puede activarse
+el mock cambiando ese valor a `true`.
 No hay nada más que cambiar.

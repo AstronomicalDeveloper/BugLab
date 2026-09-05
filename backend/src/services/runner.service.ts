@@ -19,11 +19,11 @@ const BACKEND_ROOT = path.resolve(
   "../..",
 );
 /**
- * `challenges/` vive en la raíz del monorepo, no dentro de `backend/`. Es la
+ * `challenges/` vive dentro de `backend/`. Es la
  * misma carpeta que lee `challenge.service.ts` para servir el caso al frontend:
  * una sola fuente de verdad para contenido y para ejecución.
  */
-const CHALLENGES_ROOT = path.resolve(BACKEND_ROOT, "..", "challenges");
+const CHALLENGES_ROOT = path.resolve(BACKEND_ROOT, "challenges");
 /** Los sandboxes efímeros sí se quedan dentro de `backend/`. */
 const TEMP_ROOT = path.join(BACKEND_ROOT, "temp");
 const DOCKER_EXECUTABLE = process.env.DOCKER_EXECUTABLE?.trim() || "docker";

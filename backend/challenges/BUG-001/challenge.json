@@ -23,11 +23,11 @@
   "arbolArchivos": [
     "files/RegisterPage.jsx",
     "files/RegisterForm.jsx",
-    "files/validation.js",
+    "src/utils/validation.js",
     "tests/validation.test.js"
   ],
   "archivoEditable": {
-    "ruta": "files/validation.js"
+    "ruta": "src/utils/validation.js"
   },
   "tests": [
     {
