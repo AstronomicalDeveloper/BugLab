@@ -12,9 +12,9 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * `challenges/` vive dentro de `backend/`. Se resuelve desde la ubicación de
- * este módulo y no desde `process.cwd()`, para que dé igual desde qué carpeta
- * se arranque el servidor.
+ * `challenges/` está dentro de `backend/`. Se resuelve
+ * desde la ubicación de este módulo y no desde `process.cwd()`, para que dé
+ * igual desde qué carpeta se arranque el servidor.
  *
  * Funciona igual compilado: tanto `backend/src/services/` como
  * `backend/dist/services/` quedan a dos niveles de `backend/`.
