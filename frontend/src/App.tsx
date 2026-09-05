@@ -1,5 +1,7 @@
+import { useCallback, useState } from "react";
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Navbar } from "./components/navigation/Navbar";
+import { SolvedDialog } from "./components/challenge/SolvedDialog";
 import ChallengePage from "./pages/ChallengePage";
 import { HomePage } from "./pages/HomePage";
 import { ProgressPage } from "./pages/ProgressPage";
@@ -36,9 +38,26 @@ function ChallengeRoute() {
 
   if (!caseId) return <Navigate to="/" replace />;
 
+  // La clave hace que al cambiar de caso se monte una vista nueva: el diálogo
+  // del caso anterior no puede quedar en pantalla y no hace falta resetearlo.
+  return <ChallengeView key={caseId} caseId={caseId} />;
+}
+
+function ChallengeView({ caseId }: { caseId: string }) {
+  const [solvedCase, setSolvedCase] = useState<string | null>(null);
+
+  const handleResolved = useCallback((resolvedId: string) => {
+    markResolved(resolvedId);
+    setSolvedCase(resolvedId);
+  }, []);
+
   return (
     <main className="mx-auto max-w-[1600px] px-4 pt-8 pb-16 sm:px-6">
-      <ChallengePage caseId={caseId} onCaseResolved={markResolved} />
+      <ChallengePage caseId={caseId} onCaseResolved={handleResolved} />
+
+      {solvedCase && (
+        <SolvedDialog caseId={solvedCase} onClose={() => setSolvedCase(null)} />
+      )}
     </main>
   );
 }

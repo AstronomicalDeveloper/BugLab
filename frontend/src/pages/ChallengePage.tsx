@@ -128,12 +128,8 @@ function ChallengeWorkspace({
       />
 
       <div className="challenge-layout">
-        <aside className="challenge-col">
-          <ReportViewer reporte={challenge.reporte} />
-          <ArchitectureView
-            arquitectura={challenge.arquitectura}
-            editablePaths={editablePaths}
-          />
+        {/* Izquierda: dónde mirar y con qué ayuda. */}
+        <aside className="challenge-col challenge-col--files">
           <FileTree
             paths={challenge.arbolArchivos}
             editablePaths={editablePaths}
@@ -141,7 +137,8 @@ function ChallengeWorkspace({
           <HintSystem pistas={challenge.pistas} />
         </aside>
 
-        <section className="challenge-col">
+        {/* Centro: el trabajo. Editor, ejecución y resultados. */}
+        <section className="challenge-col challenge-col--work">
           <CodeEditor
             files={challenge.editableFiles}
             contents={editor.contents}
@@ -172,6 +169,15 @@ function ChallengeWorkspace({
             onOpenExplanation={() => setExplanationOpen(true)}
           />
         </section>
+
+        {/* Derecha: el contexto del caso. Qué falla y cómo está armado. */}
+        <aside className="challenge-col challenge-col--context">
+          <ReportViewer reporte={challenge.reporte} />
+          <ArchitectureView
+            arquitectura={challenge.arquitectura}
+            editablePaths={editablePaths}
+          />
+        </aside>
       </div>
 
       {isExplanationOpen && challenge.explicacionFinal && (

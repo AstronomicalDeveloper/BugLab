@@ -48,9 +48,17 @@
 
 /* --------------------------------- Layout -------------------------------- */
 
+/*
+ * Tres zonas: archivos y pistas a la izquierda, el trabajo al centro, el
+ * contexto del caso a la derecha. El centro es el que se lleva el espacio
+ * sobrante porque es donde se escribe código.
+ */
 .challenge-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+  grid-template-columns:
+    minmax(240px, 300px)
+    minmax(0, 1fr)
+    minmax(300px, 380px);
   gap: var(--challenge-space-4);
   align-items: start;
 }
@@ -62,9 +70,38 @@
   min-width: 0;
 }
 
+/* Por debajo de 1400px no entran tres columnas legibles: el contexto pasa a
+   ocupar el ancho completo arriba, y abajo quedan archivos + editor. */
+@media (max-width: 1400px) {
+  .challenge-layout {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  }
+
+  .challenge-col--context {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
+/* En una sola columna manda el orden de lectura: primero qué falla, después
+   dónde tocar, después el editor. */
 @media (max-width: 1080px) {
   .challenge-layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .challenge-col--context {
+    grid-column: auto;
+    grid-row: auto;
+    order: 1;
+  }
+
+  .challenge-col--files {
+    order: 2;
+  }
+
+  .challenge-col--work {
+    order: 3;
   }
 }
 
