@@ -69,7 +69,7 @@ npm run dev
 
 | Nombre completo | Usuario de GitHub | Rol |
 |---|---|---|
-| Piero Alfonso Paredes Galvez | @AstronomicalDeveloper | Diseño y creación de retos (bugs) |
-| Wilson Oswaldo Carrasco Farroñan | @usuario | Frontend |
-| Bastian Arias Mandarachi | @usuario | Frontend |
-| Landry Nicol Bardales Guadalupe | @usuario | Backend |
+| Piero Alfonso Paredes Galvez | @pieroparedesg | Diseño y creación de retos (bugs) |
+| Wilson Oswaldo Carrasco Farroñan | @WilsonOCF | Frontend |
+| Bastian Arias Mandarachi | @Armand-Pat | Frontend |
+| Landry Nicol Bardales Guadalupe | @AstronomicalDeveloper | Backend |
