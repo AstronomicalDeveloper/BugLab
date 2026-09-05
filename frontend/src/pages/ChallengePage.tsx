@@ -10,7 +10,7 @@
  *   import ChallengePage from "./pages/ChallengePage";
  *
  *   <Route
- *     path="/challenge/:caseId"
+ *     path="/challenges/:caseId"
  *     element={<ChallengePageRoute />}
  *   />
  *

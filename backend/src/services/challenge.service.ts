@@ -100,6 +100,15 @@ interface ChallengeFile {
 }
 
 /**
+ * Los tests oficiales pertenecen al runner, no al material navegable del caso.
+ * Se reconoce el directorio lógico `tests/` sin depender del separador del SO.
+ */
+function isOfficialTestPath(declaredPath: string): boolean {
+  const normalized = declaredPath.replace(/\\/g, "/");
+  return normalized === "tests" || normalized.startsWith("tests/");
+}
+
+/**
  * Lee el contenido de todos los archivos declarados en `arbolArchivos`.
  *
  * El explorador los muestra todos y solo uno es editable: descubrir cuál hay
@@ -117,6 +126,7 @@ async function readChallengeFiles(
   const files = await Promise.all(
     declaredPaths.map(async (declared): Promise<ChallengeFile | null> => {
       if (typeof declared !== "string") return null;
+      if (isOfficialTestPath(declared)) return null;
 
       const contenido = await readDeclaredFile(challengeDir, declared);
       if (contenido === null) return null;
@@ -197,10 +207,17 @@ export async function loadChallenge(
   }
 
   // 4. Contenido de todos los archivos del caso, editables o no, para que el
-  //    explorador pueda abrirlos.
+  //    explorador pueda abrirlos. Los tests oficiales siguen declarados en el
+  //    challenge de disco para el runner, pero no forman parte de la respuesta.
+  if (Array.isArray(base.arbolArchivos)) {
+    combined.arbolArchivos = base.arbolArchivos.filter(
+      (declared) =>
+        typeof declared !== "string" || !isOfficialTestPath(declared)
+    );
+  }
   combined.archivos = await readChallengeFiles(
     challengeDir,
-    base.arbolArchivos,
+    combined.arbolArchivos,
     editablePath
   );
 

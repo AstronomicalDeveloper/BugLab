@@ -28,21 +28,20 @@ const tokenClass: Record<TokenKind, string> = {
 
 type Token = [string, TokenKind];
 
-/** files/validation.js — copia literal del código semilla de BUG-002. */
+/** Fragmento del archivo editable real `src/pages/RegisterPage.jsx`. */
 const codeLines: Token[][] = [
-  [["export function ", "kw"], ["shouldShowErrors", "fn"], ["(hasSubmitted) {", "punct"]],
-  [["  return ", "kw"], ["true", "kw"], [";", "punct"]],
-  [["}", "punct"]],
-  [],
-  [["export function ", "kw"], ["validateProduct", "fn"], ["(values) {", "punct"]],
-  [["  const", "kw"], [" errors ", "plain"], ["= {};", "punct"]],
-  [["  if", "kw"], [" (!values.name ", "plain"], ["||", "kw"], [" values.name.", "plain"], ["trim", "fn"], ["() === ", "punct"], ['""', "str"], [") {", "punct"]],
-  [["    errors.name = ", "plain"], ['"El nombre es obligatorio."', "str"], [";", "punct"]],
-  [["  }", "punct"]],
-  [["  if", "kw"], [" (!values.price ", "plain"], ["||", "kw"], [" ", "plain"], ["Number", "fn"], ["(values.price) <= ", "punct"], ["0", "plain"], [") {", "punct"]],
-  [["    errors.price = ", "plain"], ['"El precio debe ser mayor que cero."', "str"], [";", "punct"]],
-  [["  }", "punct"]],
-  [["  return", "kw"], [" errors;", "plain"]],
+  [["export default function ", "kw"], ["RegisterPage", "fn"], ["({ onValidation }) {", "punct"]],
+  [["  const", "kw"], [" [isOpen, setIsOpen] = ", "plain"], ["useState", "fn"], ["(false);", "punct"]],
+  [["  return", "kw"], [" (", "punct"]],
+  [["    <div>", "punct"]],
+  [["      <button onClick={() => setIsOpen(!isOpen)}>", "punct"]],
+  [["        {isOpen ? ", "plain"], ['"Cerrar formulario"', "str"], [" : ", "plain"], ['"Abrir formulario"', "str"], ["}", "punct"]],
+  [["      </button>", "punct"]],
+  [["      <div style={{ display: isOpen ? ", "punct"], ['"block"', "str"], [" : ", "plain"], ['"none"', "str"], [" }}>", "punct"]],
+  [["        <RegisterForm onValidation={onValidation} />", "punct"]],
+  [["      </div>", "punct"]],
+  [["    </div>", "punct"]],
+  [["  );", "punct"]],
   [["}", "punct"]],
 ];
 
@@ -54,22 +53,25 @@ interface FileEntry {
 
 /** `arbolArchivos` de BUG-002. El editable es el único que se abre. */
 const files: FileEntry[] = [
-  { path: "files/RegisterPage.jsx" },
-  { path: "files/RegisterForm.jsx" },
-  { path: "files/validation.js", editable: true },
-  { path: "tests/validation.test.js", readonly: true },
+  { path: "src/pages/RegisterPage.jsx", editable: true },
+  { path: "src/components/RegisterForm.jsx", readonly: true },
 ];
 
-/** Los dos tests reales del caso. Con el bug intacto, pasa uno solo. */
+/** Los siete tests reales del caso. Con el bug intacto, pasan tres. */
 const tests = [
-  { name: "No muestra errores antes de enviar", passed: false },
+  { name: "No monta el formulario mientras está cerrado", passed: false },
+  { name: "No ejecuta validación mientras está cerrado", passed: false },
+  { name: "Monta el formulario al abrirlo", passed: true },
+  { name: "No muestra errores en el primer montaje", passed: true },
   { name: "Muestra errores después de enviar", passed: true },
+  { name: "Desmonta el formulario al cerrarlo", passed: false },
+  { name: "Detiene la validación después de desmontarlo", passed: false },
 ];
 
 const passedCount = tests.filter((test) => test.passed).length;
 
 /** `arquitectura.flujo` de BUG-002. */
-const flow = ["RegisterPage", "RegisterForm", "validation.js"];
+const flow = ["RegisterPage", "montaje condicional", "RegisterForm", "useEffect"];
 
 export function WorkspaceMockup() {
   return (
@@ -96,8 +98,8 @@ export function WorkspaceMockup() {
               <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
             </span>
             <p className="min-w-0 flex-1 truncate font-mono text-[11px] text-ink-muted">
-              <span className="text-ink">BUG-002</span> · El formulario se
-              valida antes de abrirse
+              <span className="text-ink">BUG-002</span> · El formulario
+              oculto sigue validando
             </p>
             <span className="hidden shrink-0 rounded-full border border-warning/40 px-2 py-0.5 font-mono text-[10px] text-warning sm:block">
               Intermedio
@@ -160,7 +162,7 @@ export function WorkspaceMockup() {
             <div className="glass-3 flex min-w-0 flex-1 flex-col rounded-none border-y-0">
               <div className="flex items-center gap-1 border-b border-line px-2 pt-2">
                 <span className="flex items-center gap-2 rounded-t border border-b-0 border-line bg-panel/60 px-3 py-1.5 font-mono text-[11px] text-ink">
-                  validation.js
+                  RegisterPage.jsx
                 </span>
               </div>
 
@@ -225,17 +227,16 @@ export function WorkspaceMockup() {
                 </p>
                 <p className="text-[11px] font-semibold text-ink">Síntoma</p>
                 <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
-                  Al abrir el formulario para crear un producto, ya se muestran
-                  mensajes de error, aunque el usuario todavía no ha escrito ni
-                  enviado nada.
+                  Aunque el formulario está cerrado, permanece montado y su
+                  efecto de validación se ejecuta en segundo plano.
                 </p>
 
                 <p className="mt-3 text-[11px] font-semibold text-ink">
                   Comportamiento esperado
                 </p>
                 <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
-                  El formulario debe mostrarse limpio al abrirse. Los errores
-                  solo deben aparecer después de intentar enviarlo.
+                  Al cerrar, el formulario debe desmontarse y limpiar sus
+                  efectos. Los errores solo aparecen después del envío.
                 </p>
               </div>
 
@@ -268,8 +269,8 @@ export function WorkspaceMockup() {
         </div>
 
         <figcaption className="mt-4 text-center text-xs text-ink-muted">
-          BUG-002 en curso, con el código y las pruebas reales del caso: una de
-          las dos pruebas todavía falla.
+          BUG-002 en curso, con el código y las siete pruebas reales del caso:
+          tres pasan con el bug inicial.
         </figcaption>
       </figure>
     </section>

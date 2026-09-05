@@ -1,10 +1,9 @@
 import type { Challenge } from "../types";
 
 /**
- * Contenido DEMO para probar que el layout funciona de punta a punta.
- * Reusa los 3 casos redactados en la sesión anterior (BUG-001/002/003).
- * Tu compañero reemplaza esto por la fuente real de datos de cada bug —
- * el layout no depende de que este archivo exista tal cual.
+ * Datos visibles del catálogo. El workspace obtiene siempre el desafío
+ * completo desde GET /api/challenges/:id; esta lista alimenta la landing, el
+ * progreso y la navegación entre casos.
  */
 export const mockChallenges: Challenge[] = [
   {
@@ -65,56 +64,65 @@ export const mockChallenges: Challenge[] = [
   {
     id: "bug-002",
     code: "BUG-002",
-    title: "El formulario se valida antes de abrirse",
+    title: "El formulario oculto sigue validando",
     difficulty: "intermedio",
     status: "pendiente",
-    summary:
-      "Al abrir el formulario ya se ven mensajes de error, aunque el usuario todavía no escribió ni envió nada.",
-    concepts: ["Ciclo de vida y estado", "Momento de la validación"],
+    summary: "Aunque está cerrado, el formulario permanece montado y sigue validando.",
+    concepts: ["Ciclo de vida", "Renderizado condicional", "useEffect"],
     report: {
-      symptom:
-        "Cuando alguien cierra un formulario emergente y lo vuelve a abrir, a veces ve datos o errores de validación que no deberían estar ahí, como si el formulario nunca se hubiera cerrado del todo.",
-      expectedBehavior:
-        "Al ocultar el formulario, este debería dejar de existir de verdad (desmontarse) y no seguir corriendo validaciones en segundo plano.",
+      symptom: "El formulario cerrado sigue montado y valida en segundo plano.",
+      expectedBehavior: "Al cerrarlo debe desmontarse y limpiar sus efectos.",
       reportedBy: "Soporte",
-      quote: "El usuario dice que ve un mensaje de error antes de escribir nada, apenas abre el formulario de nuevo.",
+      quote: "La validación continúa aunque el formulario ya no se ve.",
     },
     architecture: {
-      summary:
-        "Un panel principal decide cuándo mostrar el formulario. El formulario, apenas se monta, corre una validación automática.",
+      summary: "RegisterPage controla el montaje de RegisterForm.",
       nodes: [
-        { id: "panel", name: "Panel principal", role: "Decide si el formulario está visible u oculto", suspect: true },
-        { id: "form", name: "Formulario de inscripción", role: "Valida los datos apenas se monta", suspect: true },
+        { id: "page", name: "RegisterPage", role: "Controla si el formulario está abierto", suspect: true },
+        { id: "form", name: "RegisterForm", role: "Valida con un efecto y lo limpia al desmontarse" },
       ],
     },
     files: [
-      {
-        id: "components",
-        name: "components",
-        kind: "folder",
-        children: [
-          { id: "PanelPrincipal.js", name: "PanelPrincipal.js", kind: "file", access: "editable" },
-          { id: "InscripcionForm.js", name: "InscripcionForm.js", kind: "file", access: "editable" },
-        ],
-      },
+      { id: "src/pages/RegisterPage.jsx", name: "RegisterPage.jsx", kind: "file", access: "editable" },
+      { id: "src/components/RegisterForm.jsx", name: "RegisterForm.jsx", kind: "file", access: "readonly" },
     ],
     fileContents: {
-      "PanelPrincipal.js": `function PanelPrincipal({ visible }) {\n  return (\n    <div style={{ display: visible ? "block" : "none" }}>\n      <InscripcionForm />\n    </div>\n  );\n}\n`,
-      "InscripcionForm.js": `function InscripcionForm() {\n  useEffect(() => {\n    validarFormulario();\n  }, []);\n\n  return <form>{/* campos del formulario */}</form>;\n}\n`,
+      "src/pages/RegisterPage.jsx": `import React, { useState } from "react";
+import RegisterForm from "../components/RegisterForm.jsx";
+
+export default function RegisterPage({ onValidation }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div>
+      <button onClick={() => setIsOpen((open) => !open)}>
+        {isOpen ? "Cerrar formulario" : "Abrir formulario"}
+      </button>
+      <div style={{ display: isOpen ? "block" : "none" }}>
+        <RegisterForm onValidation={onValidation} />
+      </div>
+    </div>
+  );
+}
+`,
+      "src/components/RegisterForm.jsx": "// Auxiliar de solo lectura con validación y limpieza mediante useEffect.\n",
     },
     hints: [
-      { id: "h1", text: "Ocultar un elemento visualmente (con estilos) no es lo mismo que dejar de renderizarlo." },
-      { id: "h2", text: "Si el componente sigue montado, su useEffect no se vuelve a limpiar ni a resetear." },
-      { id: "h3", text: "Buscá dónde se decide 'visible' y cómo se usa esa variable para mostrar el formulario." },
+      { id: "h1", text: "Comprueba si RegisterForm sigue en el árbol de React cuando no se ve." },
+      { id: "h2", text: "Cambiar display no cambia el ciclo de vida." },
+      { id: "h3", text: "Monta RegisterForm solo cuando isOpen sea true." },
     ],
     finalExplanation: {
-      title: "Ocultar no es lo mismo que desmontar",
-      body: "El panel ocultaba el formulario con display: none en vez de dejar de renderizarlo. Como React nunca lo desmontaba, el useEffect que valida al montarse quedaba 'pegado' a un estado viejo. La solución es renderizar condicionalmente ({visible && <InscripcionForm />}).",
+      title: "Ocultar no es desmontar",
+      body: "display: none conserva el componente y sus efectos; el renderizado condicional permite desmontarlo.",
     },
     tests: [
-      { id: "t1", name: "El formulario se desmonta realmente al ocultarse", passed: null },
-      { id: "t2", name: "La validación no corre antes de que el usuario escriba algo", passed: null },
-      { id: "t3", name: "Ocultar el formulario no dispara efectos duplicados", passed: null },
+      { id: "closed-unmounted", name: "No monta el formulario mientras está cerrado", passed: null },
+      { id: "closed-no-effect", name: "No ejecuta validación mientras está cerrado", passed: null },
+      { id: "open-mounts", name: "Monta el formulario al abrirlo", passed: null },
+      { id: "clean-first-render", name: "No muestra errores en el primer montaje", passed: null },
+      { id: "submit-errors", name: "Muestra errores después de enviar", passed: null },
+      { id: "close-unmounts", name: "Desmonta el formulario al cerrarlo", passed: null },
+      { id: "cleanup-effects", name: "Detiene la validación después de desmontarlo", passed: null },
     ],
   },
   {
@@ -123,46 +131,56 @@ export const mockChallenges: Challenge[] = [
     title: "Filtrar productos altera el inventario original",
     difficulty: "dificil",
     status: "pendiente",
-    summary:
-      "Al aplicar el filtro 'Solo disponibles', algunos productos desaparecen del inventario incluso después de quitar el filtro.",
-    concepts: ["Referencias y mutabilidad", "Efectos secundarios"],
+    summary: "El filtro muta referencias compartidas y altera los datos observados por otras capas.",
+    concepts: ["Referencias", "Copias superficiales", "Efectos secundarios"],
     report: {
-      symptom:
-        "Cada vez que alguien filtra el inventario por categoría en el panel de administración, algunos productos desaparecen del inventario general, como si el filtro borrara cosas de verdad.",
-      expectedBehavior:
-        "Filtrar por categoría debe mostrar una lista nueva con los productos que coinciden, sin tocar ni un dato del inventario original.",
-      reportedBy: "Depósito",
-      quote: "Filtramos por 'bebidas' para armar un pedido y cuando volvimos a la vista general, faltaban productos de otras categorías.",
+      symptom: "Tras filtrar, el resumen informa menos productos, stock y valor.",
+      expectedBehavior: "El resultado debe ser independiente sin alterar la fuente.",
+      reportedBy: "Inventario",
+      quote: "El resumen cambia aunque esa capa nunca escribió sobre los datos.",
     },
     architecture: {
-      summary:
-        "Una función de filtrado recibe el inventario completo y una categoría, y debería devolver una lista nueva sin alterar la original.",
+      summary: "filterInventory e inventorySummary consumen el mismo inventario.",
       nodes: [
-        { id: "panel", name: "Panel de inventario", role: "Muestra la lista completa de productos" },
-        { id: "filter", name: "Filtro por categoría", role: "Debería generar una copia filtrada, no tocar el original", suspect: true },
+        { id: "data", name: "inventoryData", role: "Crea el inventario" },
+        { id: "filter", name: "filterInventory", role: "Selecciona disponibles", suspect: true },
+        { id: "summary", name: "inventorySummary", role: "Calcula productos, stock y valor" },
       ],
     },
     files: [
-      { id: "filterByCategory.js", name: "filterByCategory.js", kind: "file", access: "editable" },
-      { id: "inventory.seed.js", name: "inventory.seed.js", kind: "file", access: "readonly" },
+      { id: "src/data/inventoryData.js", name: "inventoryData.js", kind: "file", access: "readonly" },
+      { id: "src/services/filterInventory.js", name: "filterInventory.js", kind: "file", access: "editable" },
+      { id: "src/services/inventorySummary.js", name: "inventorySummary.js", kind: "file", access: "readonly" },
     ],
     fileContents: {
-      "filterByCategory.js": `function filterByCategory(inventory, category) {\n  for (let i = inventory.length - 1; i >= 0; i--) {\n    if (inventory[i].category !== category) {\n      inventory.splice(i, 1);\n    }\n  }\n  return inventory;\n}\n\nmodule.exports = { filterByCategory };\n`,
-      "inventory.seed.js": `// Datos de ejemplo del inventario (solo lectura)\nconst inventory = [\n  { id: 1, name: "Agua mineral", category: "bebidas" },\n  { id: 2, name: "Jugo de naranja", category: "bebidas" },\n  { id: 3, name: "Arroz", category: "almacen" },\n];\n\nmodule.exports = { inventory };\n`,
+      "src/data/inventoryData.js": "// Fábrica confiable de inventario.\n",
+      "src/services/filterInventory.js": `export function filterInventory(inventory) {
+  const availableProducts = inventory;
+  for (let index = availableProducts.length - 1; index >= 0; index--) {
+    if (!availableProducts[index].available) availableProducts.splice(index, 1);
+  }
+  return availableProducts;
+}
+`,
+      "src/services/inventorySummary.js": "// Consumidor confiable que calcula productos, stock y valor.\n",
     },
     hints: [
-      { id: "h1", text: "¿El arreglo que recibe la función es el mismo que se usa después, o una copia?" },
-      { id: "h2", text: "Métodos como splice, sort o push modifican el arreglo original; filter y map devuelven uno nuevo." },
-      { id: "h3", text: "Fijate si la función devuelve una lista nueva o el mismo arreglo que le pasaron, ya modificado." },
+      { id: "h1", text: "Compara el inventario antes y después de filtrar." },
+      { id: "h2", text: "Dos variables pueden apuntar al mismo array." },
+      { id: "h3", text: "Un array nuevo todavía puede compartir sus objetos." },
     ],
     finalExplanation: {
-      title: "Mutación por referencia",
-      body: "La función usaba splice() para sacar productos del arreglo original (mutación por referencia) y después devolvía esa misma referencia ya alterada. La solución es construir la lista con inventory.filter(...), que siempre devuelve un arreglo nuevo.",
+      title: "Mutación y referencias compartidas",
+      body: "Aislar el resultado exige un array nuevo y objetos independientes.",
     },
     tests: [
-      { id: "t1", name: "Debe devolver solo los productos de la categoría pedida", passed: null },
-      { id: "t2", name: "No debe modificar el inventario original", passed: null },
-      { id: "t3", name: "Debe devolver una lista nueva, no la misma referencia", passed: null },
+      { id: "only-available", name: "Devuelve únicamente los productos disponibles", passed: null },
+      { id: "source-unchanged", name: "Conserva el inventario fuente", passed: null },
+      { id: "independent-array", name: "Devuelve un arreglo independiente", passed: null },
+      { id: "array-isolation", name: "Aísla las modificaciones del arreglo resultado", passed: null },
+      { id: "object-isolation", name: "Aísla las modificaciones de objetos", passed: null },
+      { id: "independent-runs", name: "Produce ejecuciones independientes", passed: null },
+      { id: "consumer-isolation", name: "No altera el resumen del inventario", passed: null },
     ],
   },
 ];

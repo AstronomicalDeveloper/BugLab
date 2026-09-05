@@ -110,6 +110,7 @@ export default function CodeEditor({
       </div>
 
       <div
+        className="challenge-editor__tabpanel"
         role="tabpanel"
         id={`challenge-tabpanel-${activeIndex}`}
         aria-labelledby={`challenge-tab-${activeIndex}`}
