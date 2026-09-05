@@ -68,8 +68,3 @@ sequenceDiagram
     S-->>A: Resultado (pasa/falla por test)
     A-->>E: JSON con resultados + pistas disponibles
 ```
-
-## 4. Integración con APIs o IA
-
-No aplica en este MVP — no hay integración con APIs externas ni modelos de IA. Toda la lógica de validación es local, mediante tests de comportamiento predefinidos por caso.
-```
