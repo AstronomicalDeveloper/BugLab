@@ -7,6 +7,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  realpath,
   rm,
   stat,
   writeFile,
@@ -58,6 +59,7 @@ export interface ChallengeValidationResult {
 interface ChallengeConfig {
   id: string;
   editableFiles: string[];
+  auxiliaryFiles: string[];
 }
 
 interface VitestJsonReport {
@@ -135,6 +137,24 @@ function readEditablePaths(config: Record<string, unknown>): string[] {
   });
 }
 
+/** Archivos oficiales de solo lectura que un desafío necesita para ejecutarse. */
+function readAuxiliaryPaths(config: Record<string, unknown>): string[] {
+  const declared = config.archivosAuxiliares;
+  if (declared === undefined) return [];
+
+  if (
+    !Array.isArray(declared) ||
+    !declared.every((entry): entry is string => typeof entry === "string")
+  ) {
+    throw new ChallengeValidationError(
+      "archivosAuxiliares debe ser un arreglo de rutas",
+      500,
+    );
+  }
+
+  return declared;
+}
+
 async function loadChallenge(challengeId: string): Promise<{
   config: ChallengeConfig;
   challengeDirectory: string;
@@ -191,10 +211,57 @@ async function loadChallenge(challengeId: string): Promise<{
     assertSafeRelativePath(editablePath);
   }
 
+  const auxiliaryFiles = readAuxiliaryPaths(
+    parsedConfig as Record<string, unknown>,
+  );
+  const declaredPaths = new Set(editableFiles);
+  for (const auxiliaryPath of auxiliaryFiles) {
+    assertSafeRelativePath(auxiliaryPath);
+    if (declaredPaths.has(auxiliaryPath)) {
+      throw new ChallengeValidationError(
+        `La ruta ${auxiliaryPath} no puede ser editable y auxiliar a la vez`,
+        500,
+      );
+    }
+    declaredPaths.add(auxiliaryPath);
+  }
+
   return {
-    config: { id: challengeId, editableFiles },
+    config: { id: challengeId, editableFiles, auxiliaryFiles },
     challengeDirectory,
   };
+}
+
+/**
+ * Localiza el archivo confiable dentro del contenido oficial. Las rutas lógicas
+ * `src/.../archivo` pueden conservar su fuente física en `files/archivo`.
+ */
+async function resolveOfficialFile(
+  challengeDirectory: string,
+  logicalPath: string,
+): Promise<string> {
+  const candidates = [
+    path.resolve(challengeDirectory, logicalPath),
+    path.resolve(challengeDirectory, "files", path.basename(logicalPath)),
+  ];
+
+  for (const candidate of candidates) {
+    if (!isPathInside(challengeDirectory, candidate)) continue;
+
+    try {
+      const resolvedSource = await realpath(candidate);
+      if (!isPathInside(challengeDirectory, resolvedSource)) continue;
+      const sourceStats = await stat(resolvedSource);
+      if (sourceStats.isFile()) return resolvedSource;
+    } catch {
+      // Se prueba el siguiente candidato permitido.
+    }
+  }
+
+  throw new ChallengeValidationError(
+    `No se encuentra el archivo auxiliar oficial ${logicalPath}`,
+    500,
+  );
 }
 
 function validateFiles(files: ChallengeFile[], allowedFiles: string[]): void {
@@ -441,6 +508,26 @@ export async function validateChallenge(
   try {
     await mkdir(reportDirectory);
     await chmod(reportDirectory, 0o777);
+
+    for (const auxiliaryPath of config.auxiliaryFiles) {
+      const source = await resolveOfficialFile(
+        challengeDirectory,
+        auxiliaryPath,
+      );
+      const destination = path.resolve(sandboxDirectory, auxiliaryPath);
+      if (!isPathInside(sandboxDirectory, destination)) {
+        throw new ChallengeValidationError(
+          `Ruta auxiliar no permitida: ${auxiliaryPath}`,
+          500,
+        );
+      }
+
+      await mkdir(path.dirname(destination), { recursive: true });
+      await cp(source, destination, {
+        force: false,
+        errorOnExist: true,
+      });
+    }
 
     for (const file of files) {
       const destination = path.resolve(sandboxDirectory, file.path);

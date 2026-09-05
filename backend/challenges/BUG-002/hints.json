@@ -1,7 +1,7 @@
 {
   "pistas": [
-    { "nivel": 1, "texto": "Fíjate en qué momento se calculan los errores por primera vez: ¿ocurre por algo que hizo el usuario, o antes?" },
-    { "nivel": 2, "texto": "Revisa la función que decide si mostrar errores. ¿Depende de si el usuario ya envió el formulario?" },
-    { "nivel": 3, "texto": "La función que decide mostrar errores siempre devuelve true, sin revisar si el formulario ya fue enviado." }
+    { "nivel": 1, "texto": "Comprueba si RegisterForm existe en el árbol de React incluso cuando no se ve en pantalla." },
+    { "nivel": 2, "texto": "Cambiar display solo afecta la presentación visual; no cambia el ciclo de vida del componente." },
+    { "nivel": 3, "texto": "En lugar de renderizar siempre el contenedor, monta RegisterForm únicamente cuando isOpen sea true." }
   ]
 }

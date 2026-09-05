@@ -1,10 +1,10 @@
 # Explicación — BUG-002
 
 ## Causa raíz
-La función `shouldShowErrors` siempre devuelve `true`, sin importar si el usuario ya intentó enviar el formulario, por lo que los errores se muestran desde el inicio.
+`RegisterPage` cambia `display` para ocultar el formulario, pero sigue renderizando `RegisterForm`. El componente permanece montado y su `useEffect` continúa validando aunque el usuario crea que está cerrado.
 
 ## Razonamiento
-Que un dato exista (los valores del formulario) no significa que ya deba evaluarse ni mostrarse. Hay que distinguir entre "tener datos" y "el momento correcto para validarlos y mostrarlos", que en este caso es el intento de envío.
+CSS puede ocultar un nodo, pero no altera su ciclo de vida en React. Para que la función de limpieza del efecto se ejecute al cerrar, el componente debe salir del árbol mediante renderizado condicional: `{isOpen && <RegisterForm />}`.
 
 ## Concepto transferible
-Condicionar cuándo se ejecuta o se muestra una lógica de validación a una acción explícita del usuario (como enviar) evita mostrar retroalimentación antes de tiempo.
+Ocultar visualmente y desmontar son operaciones distintas. Cuando un componente posee suscripciones, temporizadores u otros efectos, decidir si permanece montado también determina si esos efectos siguen activos y cuándo se ejecuta su limpieza.

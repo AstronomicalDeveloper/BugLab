@@ -1,10 +1,14 @@
 # Explicación — BUG-003
 
 ## Causa raíz
-`filterAvailableProducts` usa `splice` dentro de un bucle, mutando directamente el arreglo recibido en vez de construir uno nuevo. Cada filtrado elimina permanentemente los productos no disponibles del inventario original.
+`filterInventory` asigna el inventario recibido a otra variable, pero esa asignación no crea una copia: ambas variables apuntan al mismo array. Al usar `splice`, elimina productos directamente de la colección compartida y devuelve además esa misma referencia.
 
 ## Razonamiento
-Cuando una función recibe una colección y la modifica con métodos como `splice`, `push` o `sort`, cualquier otra parte del sistema que comparta esa misma referencia se ve afectada. Filtrar no debería alterar los datos de origen.
+Los arrays y objetos se manejan mediante referencias. Una mutación *in-place* como `splice`, `push` o `sort` cambia el valor observado por todas las capas que conserven esa referencia. Por eso `inventorySummary`, aunque solo lea datos, termina calculando menos productos, stock y valor después de que otra capa aplica el filtro.
+
+Crear otro array resuelve únicamente parte del problema. Operaciones como `filter` o `[...inventory]` producen un array distinto, pero sus elementos siguen siendo los mismos objetos: es una copia superficial (*shallow copy*). Si quien recibe el resultado cambia `stock`, `name` u otra propiedad, el objeto del inventario fuente también cambia.
+
+El filtro debe construir una colección independiente y crear copias de los productos seleccionados. Así cada capa recibe datos que puede manipular sin contaminar la fuente ni las ejecuciones posteriores.
 
 ## Concepto transferible
-Preferir operaciones inmutables (`filter`, `map`, `[...arr]`) sobre operaciones que mutan in place evita efectos secundarios inesperados al compartir datos entre distintas partes de una aplicación.
+Evitar efectos secundarios requiere identificar todos los niveles de referencia compartida. Copiar el contenedor no implica copiar sus elementos; el grado de aislamiento necesario depende de qué partes de la estructura podrán modificarse en cada capa.

@@ -1,7 +1,7 @@
 {
   "pistas": [
-    { "nivel": 1, "texto": "Después de filtrar, revisa si el inventario original sigue teniendo todos sus productos." },
-    { "nivel": 2, "texto": "¿Qué hacen métodos como splice sobre el arreglo en el que se llaman?" },
-    { "nivel": 3, "texto": "La función usa splice directamente sobre el inventario recibido, mutándolo. Prueba con un método que devuelva un nuevo arreglo, como filter." }
+    { "nivel": 1, "texto": "Compara el inventario antes y después de ejecutar el filtro. ¿La función solo calcula un resultado o también cambia su entrada?" },
+    { "nivel": 2, "texto": "Revisa qué referencias conservan filterInventory, quien llamó a la función y el consumidor del resumen. Dos variables pueden apuntar al mismo array." },
+    { "nivel": 3, "texto": "Crear un array nuevo evita mutar su estructura, pero una copia superficial todavía comparte los objetos internos. El resultado necesita aislar ambos niveles." }
   ]
 }
