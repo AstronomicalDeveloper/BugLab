@@ -3,6 +3,7 @@ import { fetchChallenge } from "../services/api";
 import type {
   ArchitectureNode,
   ChallengeExplanation,
+  ChallengeFile,
   EditableFile,
   Hint,
   NormalizedChallenge,
@@ -82,6 +83,34 @@ export function normalize(raw: RawChallenge): NormalizedChallenge {
       contenidoInicial: readString(file.contenidoInicial),
     }));
 
+  const arbolArchivos = readStringArray(raw.arbolArchivos);
+  const editablePaths = new Set(editableFiles.map((file) => file.ruta));
+
+  /**
+   * `archivos` lo agrega el backend con el contenido de cada ruta. Si no viene
+   * —backend viejo o mock en crudo— se reconstruye desde `arbolArchivos` con
+   * el contenido que se conozca, para no perder la navegación.
+   */
+  const archivos: ChallengeFile[] = Array.isArray(raw.archivos)
+    ? raw.archivos
+        .map(readRecord)
+        .filter((file) => typeof file.ruta === "string")
+        .map((file) => ({
+          ruta: readString(file.ruta),
+          contenido: readString(file.contenido),
+          editable:
+            typeof file.editable === "boolean"
+              ? file.editable
+              : editablePaths.has(readString(file.ruta)),
+        }))
+    : arbolArchivos.map((ruta) => ({
+        ruta,
+        contenido:
+          editableFiles.find((file) => file.ruta === ruta)?.contenidoInicial ??
+          "",
+        editable: editablePaths.has(ruta),
+      }));
+
   const componentes: ArchitectureNode[] = readArray(arquitectura.componentes)
     .map(readRecord)
     .map((node) => ({
@@ -115,7 +144,8 @@ export function normalize(raw: RawChallenge): NormalizedChallenge {
       componentes,
       flujo: readString(arquitectura.flujo),
     },
-    arbolArchivos: readStringArray(raw.arbolArchivos),
+    arbolArchivos,
+    archivos,
     editableFiles,
     pistas,
     explicacionFinal,

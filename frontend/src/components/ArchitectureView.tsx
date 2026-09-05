@@ -2,21 +2,18 @@ import type { ChallengeArchitecture } from "../types/challenge";
 
 interface ArchitectureViewProps {
   arquitectura: ChallengeArchitecture;
-  /** Rutas editables, para resaltar el nodo del flujo que se puede tocar. */
-  editablePaths: string[];
 }
 
-/** `files/validation.js` → `["validation.js", "validation"]` */
-function nameVariants(path: string): string[] {
-  const file = path.split("/").pop() ?? path;
-  return [file, file.replace(/\.[^.]+$/, "")];
-}
-
+/**
+ * Flujo del sistema y responsabilidad de cada pieza.
+ *
+ * El nodo editable NO se resalta a propósito: junto con el explorador, este
+ * panel es donde el estudiante deduce dónde puede estar el fallo. Marcarlo
+ * respondería la pregunta que plantea el ejercicio.
+ */
 export default function ArchitectureView({
   arquitectura,
-  editablePaths,
 }: ArchitectureViewProps) {
-  const editableNames = new Set(editablePaths.flatMap(nameVariants));
   const flowNodes = arquitectura.flujo
     .split("→")
     .map((node) => node.trim())
@@ -33,30 +30,16 @@ export default function ArchitectureView({
 
       {flowNodes.length > 0 && (
         <p className="challenge-arch__flow">
-          {flowNodes.map((node, index) => {
-            const isEditable = editableNames.has(node);
-            return (
-              <span key={node} style={{ display: "contents" }}>
-                {index > 0 && (
-                  <span className="challenge-arch__arrow" aria-hidden="true">
-                    →
-                  </span>
-                )}
-                <span
-                  className={
-                    isEditable
-                      ? "challenge-arch__node challenge-arch__node--editable"
-                      : "challenge-arch__node"
-                  }
-                >
-                  {node}
-                  {isEditable && (
-                    <span className="challenge-sr-only"> (editable)</span>
-                  )}
+          {flowNodes.map((node, index) => (
+            <span key={node} style={{ display: "contents" }}>
+              {index > 0 && (
+                <span className="challenge-arch__arrow" aria-hidden="true">
+                  →
                 </span>
-              </span>
-            );
-          })}
+              )}
+              <span className="challenge-arch__node">{node}</span>
+            </span>
+          ))}
         </p>
       )}
 

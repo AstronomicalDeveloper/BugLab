@@ -81,7 +81,7 @@ function resolveInsideChallenge(
   return candidates.filter((candidate) => candidate.startsWith(boundary));
 }
 
-async function readEditableContent(
+async function readDeclaredFile(
   challengeDir: string,
   declaredPath: string
 ): Promise<string | null> {
@@ -90,6 +90,42 @@ async function readEditableContent(
     if (content !== null) return content;
   }
   return null;
+}
+
+/** Un archivo del caso tal como lo consume el explorador del frontend. */
+interface ChallengeFile {
+  ruta: string;
+  contenido: string;
+  editable: boolean;
+}
+
+/**
+ * Lee el contenido de todos los archivos declarados en `arbolArchivos`.
+ *
+ * El explorador los muestra todos y solo uno es editable: descubrir cuál hay
+ * que tocar es parte del ejercicio, así que el resto tiene que poder abrirse
+ * y leerse igual. Los que no existen en disco se omiten en vez de romper la
+ * carga del caso.
+ */
+async function readChallengeFiles(
+  challengeDir: string,
+  declaredPaths: unknown,
+  editablePath: string | null
+): Promise<ChallengeFile[]> {
+  if (!Array.isArray(declaredPaths)) return [];
+
+  const files = await Promise.all(
+    declaredPaths.map(async (declared): Promise<ChallengeFile | null> => {
+      if (typeof declared !== "string") return null;
+
+      const contenido = await readDeclaredFile(challengeDir, declared);
+      if (contenido === null) return null;
+
+      return { ruta: declared, contenido, editable: declared === editablePath };
+    })
+  );
+
+  return files.filter((file): file is ChallengeFile => file !== null);
 }
 
 /**
@@ -144,10 +180,13 @@ export async function loadChallenge(
 
   // 3. Código semilla del archivo editable.
   const editable = base.archivoEditable;
+  let editablePath: string | null = null;
+
   if (typeof editable === "object" && editable !== null) {
     const declaredPath = (editable as { ruta?: unknown }).ruta;
     if (typeof declaredPath === "string") {
-      const content = await readEditableContent(challengeDir, declaredPath);
+      editablePath = declaredPath;
+      const content = await readDeclaredFile(challengeDir, declaredPath);
       if (content !== null) {
         combined.archivoEditable = {
           ...(editable as Record<string, unknown>),
@@ -156,6 +195,14 @@ export async function loadChallenge(
       }
     }
   }
+
+  // 4. Contenido de todos los archivos del caso, editables o no, para que el
+  //    explorador pueda abrirlos.
+  combined.archivos = await readChallengeFiles(
+    challengeDir,
+    base.arbolArchivos,
+    editablePath
+  );
 
   return combined;
 }

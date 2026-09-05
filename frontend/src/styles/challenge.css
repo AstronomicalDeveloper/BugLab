@@ -317,19 +317,33 @@
   gap: 2px;
 }
 
+/* Cada archivo es un botón: se abren todos, incluidos los de solo lectura. */
 .challenge-tree__item {
+  appearance: none;
+  width: 100%;
   display: flex;
   align-items: center;
   gap: var(--challenge-space-2);
   padding: 6px 10px;
   border-radius: var(--challenge-radius-sm);
   border: 1px solid transparent;
+  background: transparent;
   font-family: var(--challenge-font-mono);
   font-size: var(--challenge-text-sm);
   color: var(--challenge-text-secondary);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease,
+    border-color 120ms ease;
 }
 
-.challenge-tree__item--editable {
+.challenge-tree__item:hover {
+  background: var(--challenge-fill);
+  color: var(--challenge-text-primary);
+}
+
+/* El archivo abierto. El morado marca selección, no "editable". */
+.challenge-tree__item--active {
   background: var(--challenge-purple-lighter);
   border-color: var(--challenge-purple-light);
   color: var(--challenge-purple-text);
@@ -480,6 +494,15 @@
   padding: var(--challenge-space-3) var(--challenge-space-4);
   border-top: 1px solid var(--challenge-hairline);
   background: var(--challenge-fill-soft);
+}
+
+/* Aviso de solo lectura. Aparece recién al abrir el archivo, nunca en el
+   árbol: si el explorador lo delatara, no habría nada que descubrir. */
+.challenge-editor__readonly {
+  flex: none;
+  font-family: var(--challenge-font-mono);
+  font-size: var(--challenge-text-xs);
+  color: var(--challenge-text-secondary);
 }
 
 .challenge-editor__path {

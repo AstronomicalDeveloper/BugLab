@@ -105,6 +105,14 @@ function ChallengeWorkspace({
   const [isExplanationOpen, setExplanationOpen] = useState(false);
   const notified = useRef(false);
 
+  /**
+   * Archivo abierto. Arranca en el primero del árbol y no en el editable:
+   * descubrir cuál hay que tocar es parte del ejercicio.
+   */
+  const [activePath, setActivePath] = useState<string | null>(
+    challenge.archivos[0]?.ruta ?? null,
+  );
+
   // El shell se entera del progreso por callback, no por un store compartido.
   useEffect(() => {
     if (validation.isSolved && !notified.current) {
@@ -113,7 +121,6 @@ function ChallengeWorkspace({
     }
   }, [validation.isSolved, onCaseResolved, caseId]);
 
-  const editablePaths = challenge.editableFiles.map((file) => file.ruta);
   const failedAttempt =
     validation.status === "done" && !validation.isSolved;
 
@@ -131,8 +138,9 @@ function ChallengeWorkspace({
         {/* Izquierda: dónde mirar y con qué ayuda. */}
         <aside className="challenge-col challenge-col--files">
           <FileTree
-            paths={challenge.arbolArchivos}
-            editablePaths={editablePaths}
+            files={challenge.archivos}
+            activePath={activePath}
+            onSelect={setActivePath}
           />
           <HintSystem pistas={challenge.pistas} />
         </aside>
@@ -140,7 +148,9 @@ function ChallengeWorkspace({
         {/* Centro: el trabajo. Editor, ejecución y resultados. */}
         <section className="challenge-col challenge-col--work">
           <CodeEditor
-            files={challenge.editableFiles}
+            files={challenge.archivos}
+            activePath={activePath}
+            onSelectPath={setActivePath}
             contents={editor.contents}
             onChange={editor.setContent}
             onReset={editor.resetFile}
@@ -173,10 +183,7 @@ function ChallengeWorkspace({
         {/* Derecha: el contexto del caso. Qué falla y cómo está armado. */}
         <aside className="challenge-col challenge-col--context">
           <ReportViewer reporte={challenge.reporte} />
-          <ArchitectureView
-            arquitectura={challenge.arquitectura}
-            editablePaths={editablePaths}
-          />
+          <ArchitectureView arquitectura={challenge.arquitectura} />
         </aside>
       </div>
 

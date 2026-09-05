@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import type { EditableFile } from "../types/challenge";
+import { useRef } from "react";
+import type { ChallengeFile } from "../types/challenge";
 import type { EditorContents } from "../hooks/useEditorState";
 
 interface CodeEditorProps {
-  /** Siempre array. Hoy puede traer un solo archivo; el componente no cambia. */
-  files: EditableFile[];
+  /** Todos los archivos del caso. Los de solo lectura también se abren. */
+  files: ChallengeFile[];
+  /** Ruta abierta. La controla la página, para que el árbol la comparta. */
+  activePath: string | null;
+  onSelectPath: (ruta: string) => void;
   contents: EditorContents;
   onChange: (ruta: string, value: string) => void;
   onReset: (ruta: string) => void;
@@ -18,37 +21,43 @@ function lineNumbers(value: string): string {
 
 export default function CodeEditor({
   files,
+  activePath,
+  onSelectPath,
   contents,
   onChange,
   onReset,
   isDirty,
 }: CodeEditorProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-
-  // Si cambia el conjunto de archivos, la pestaña activa vuelve a la primera.
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [files]);
 
   if (files.length === 0) {
     return (
       <section className="challenge-panel challenge-surface challenge-surface--level-1">
         <h2 className="challenge-panel__title">Editor</h2>
         <p className="challenge-panel__note">
-          Este caso no declara ningún archivo editable.
+          Este caso no declara ningún archivo.
         </p>
       </section>
     );
   }
 
-  const activeFile = files[Math.min(activeIndex, files.length - 1)];
-  const value = contents[activeFile.ruta] ?? "";
-  const hasSeedCode = activeFile.contenidoInicial.trim() !== "";
+  const activeIndex = Math.max(
+    0,
+    files.findIndex((file) => file.ruta === activePath),
+  );
+  const activeFile = files[activeIndex];
+
+  // Los editables llevan su valor en el estado del editor; los de solo lectura
+  // se muestran tal como llegaron del backend.
+  const value = activeFile.editable
+    ? (contents[activeFile.ruta] ?? activeFile.contenido)
+    : activeFile.contenido;
+
+  const isEmpty = value.trim() === "";
 
   function focusTab(index: number) {
     const next = (index + files.length) % files.length;
-    setActiveIndex(next);
+    onSelectPath(files[next].ruta);
     tabRefs.current[next]?.focus();
   }
 
@@ -64,7 +73,7 @@ export default function CodeEditor({
       <div
         className="challenge-editor__tablist"
         role="tablist"
-        aria-label="Archivos editables"
+        aria-label="Archivos del caso"
       >
         {files.map((file, index) => (
           <button
@@ -79,7 +88,7 @@ export default function CodeEditor({
             aria-controls={`challenge-tabpanel-${index}`}
             tabIndex={index === activeIndex ? 0 : -1}
             className="challenge-editor__tab"
-            onClick={() => setActiveIndex(index)}
+            onClick={() => onSelectPath(file.ruta)}
             onKeyDown={(event) => {
               if (event.key === "ArrowRight") {
                 event.preventDefault();
@@ -91,7 +100,7 @@ export default function CodeEditor({
             }}
           >
             {file.ruta.split("/").pop()}
-            {isDirty(file.ruta) && (
+            {file.editable && isDirty(file.ruta) && (
               <span className="challenge-editor__dirty" aria-hidden="true">
                 ●
               </span>
@@ -115,6 +124,7 @@ export default function CodeEditor({
             value={value}
             rows={Math.max(value.split("\n").length, 12)}
             onChange={(event) => onChange(activeFile.ruta, event.target.value)}
+            readOnly={!activeFile.editable}
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
@@ -122,25 +132,31 @@ export default function CodeEditor({
           />
         </div>
 
-        {!hasSeedCode && (
+        {isEmpty && (
           <p className="challenge-editor__empty">
-            El caso declara <code>{activeFile.ruta}</code> como archivo editable,
-            pero <code>challenge.json</code> no incluye su código inicial. Escribe
-            la solución desde cero o pide que el backend envíe el contenido.
+            <code>{activeFile.ruta}</code> llegó sin contenido. Revisa que el
+            archivo exista dentro de la carpeta del caso.
           </p>
         )}
       </div>
 
       <div className="challenge-editor__foot">
         <span className="challenge-editor__path">{activeFile.ruta}</span>
-        <button
-          type="button"
-          className="challenge-button challenge-button--ghost challenge-button--sm"
-          onClick={() => onReset(activeFile.ruta)}
-          disabled={!isDirty(activeFile.ruta)}
-        >
-          Restaurar
-        </button>
+
+        {activeFile.editable ? (
+          <button
+            type="button"
+            className="challenge-button challenge-button--ghost challenge-button--sm"
+            onClick={() => onReset(activeFile.ruta)}
+            disabled={!isDirty(activeFile.ruta)}
+          >
+            Restaurar
+          </button>
+        ) : (
+          <span className="challenge-editor__readonly">
+            Solo lectura · este archivo no se puede modificar
+          </span>
+        )}
       </div>
     </section>
   );
