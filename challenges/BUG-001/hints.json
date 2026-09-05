@@ -1,0 +1,16 @@
+{
+  "pistas": [
+    {
+      "nivel": 1,
+      "texto": "Revisa qué ocurre exactamente en el límite de edad permitido."
+    },
+    {
+      "nivel": 2,
+      "texto": "¿Qué valores acepta realmente la condición?"
+    },
+    {
+      "nivel": 3,
+      "texto": "Observa el operador utilizado para comparar la edad."
+    }
+  ]
+}
