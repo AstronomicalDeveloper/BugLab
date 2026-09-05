@@ -1,444 +1,161 @@
-import { spawn } from "node:child_process";
-import { constants } from "node:fs";
-import {
-  access,
-  chmod,
-  cp,
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const BACKEND_ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../..",
-);
-const CHALLENGES_ROOT = path.join(BACKEND_ROOT, "challenges");
-const TEMP_ROOT = path.join(BACKEND_ROOT, "temp");
-const DOCKER_EXECUTABLE = process.env.DOCKER_EXECUTABLE?.trim() || "docker";
-const RUNNER_IMAGE = process.env.BUGLAB_RUNNER_IMAGE?.trim() || "buglab-runner:latest";
-const VALIDATION_TIMEOUT_MS = 10_000;
-const CONTAINER_CLEANUP_TIMEOUT_MS = 5_000;
-const MAX_CAPTURED_OUTPUT_BYTES = 1_000_000;
+/**
+ * Los datos de cada caso viven repartidos en varios archivos dentro de
+ * `challenges/<id>/`. Este servicio los combina EN MEMORIA para devolver un
+ * único documento con la forma que ya consume el frontend. No toca el disco ni
+ * reorganiza nada: el reparto físico se mantiene tal cual.
+ */
 
-export interface ChallengeFile {
-  path: string;
-  content: string;
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * `challenges/` está en la raíz del monorepo, fuera de `backend/`. Se resuelve
+ * desde la ubicación de este módulo y no desde `process.cwd()`, para que dé
+ * igual desde qué carpeta se arranque el servidor.
+ *
+ * Funciona igual compilado: tanto `backend/src/services/` como
+ * `backend/dist/services/` quedan a tres niveles de la raíz.
+ */
+const CHALLENGES_DIR = path.resolve(HERE, "..", "..", "..", "challenges");
+
+/** Ids permitidos. Bloquea `..`, separadores y cualquier salto de carpeta. */
+const VALID_ID = /^[A-Za-z0-9._-]+$/;
+
+export class ChallengeNotFoundError extends Error {}
+
+function isMissingFile(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === "ENOENT"
+  );
 }
 
-export interface ChallengeTestResult {
-  name: string;
-  passed: boolean;
+async function readText(filePath: string): Promise<string> {
+  return readFile(filePath, "utf8");
 }
 
-export interface ChallengeValidationResult {
-  challengeId: string;
-  success: boolean;
-  passed: number;
-  failed: number;
-  total: number;
-  tests: ChallengeTestResult[];
-  stdout: string;
-  stderr: string;
-  exitCode: number | null;
-  timedOut: boolean;
-}
-
-interface ChallengeConfig {
-  id: string;
-  editableFiles: string[];
-}
-
-interface VitestJsonReport {
-  success?: unknown;
-  numPassedTests?: unknown;
-  numFailedTests?: unknown;
-  numTotalTests?: unknown;
-  testResults?: unknown;
-}
-
-interface ProcessResult {
-  stdout: string;
-  stderr: string;
-  exitCode: number | null;
-  timedOut: boolean;
-}
-
-export class ChallengeValidationError extends Error {
-  constructor(
-    message: string,
-    public readonly statusCode: number,
-  ) {
-    super(message);
-    this.name = "ChallengeValidationError";
-  }
-}
-
-function isPathInside(parent: string, candidate: string): boolean {
-  const relative = path.relative(parent, candidate);
-  return relative !== "" && !relative.startsWith("..") && !path.isAbsolute(relative);
-}
-
-function assertSafeRelativePath(filePath: string): void {
-  if (
-    filePath.length === 0 ||
-    filePath.includes("\0") ||
-    path.isAbsolute(filePath) ||
-    path.win32.isAbsolute(filePath) ||
-    filePath.includes("\\")
-  ) {
-    throw new ChallengeValidationError(`Ruta no permitida: ${filePath}`, 400);
-  }
-
-  const segments = filePath.split("/");
-  if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) {
-    throw new ChallengeValidationError(`Ruta no permitida: ${filePath}`, 400);
-  }
-}
-
-async function loadChallenge(challengeId: string): Promise<{
-  config: ChallengeConfig;
-  challengeDirectory: string;
-}> {
-  if (!/^[A-Za-z0-9_-]+$/.test(challengeId)) {
-    throw new ChallengeValidationError("challengeId inválido", 400);
-  }
-
-  const challengeDirectory = path.resolve(CHALLENGES_ROOT, challengeId);
-  if (!isPathInside(CHALLENGES_ROOT, challengeDirectory)) {
-    throw new ChallengeValidationError("challengeId inválido", 400);
-  }
-
+/** Devuelve `null` si el archivo no existe; propaga cualquier otro error. */
+async function readOptionalText(filePath: string): Promise<string | null> {
   try {
-    const challengeStats = await stat(challengeDirectory);
-    if (!challengeStats.isDirectory()) throw new Error("No es un directorio");
-  } catch {
-    throw new ChallengeValidationError(`El desafío ${challengeId} no existe`, 404);
+    return await readText(filePath);
+  } catch (error) {
+    if (isMissingFile(error)) return null;
+    throw error;
   }
+}
 
-  let parsedConfig: unknown;
+function parseJson(source: string, label: string): Record<string, unknown> {
+  let parsed: unknown;
   try {
-    parsedConfig = JSON.parse(
-      await readFile(path.join(challengeDirectory, "challenge.json"), "utf8"),
-    );
+    parsed = JSON.parse(source);
   } catch {
-    throw new ChallengeValidationError(
-      `La configuración de ${challengeId} no es válida`,
-      500,
-    );
+    throw new Error(`${label} no es JSON válido.`);
   }
 
-  if (
-    typeof parsedConfig !== "object" ||
-    parsedConfig === null ||
-    !("id" in parsedConfig) ||
-    !("editableFiles" in parsedConfig) ||
-    parsedConfig.id !== challengeId ||
-    !Array.isArray(parsedConfig.editableFiles) ||
-    !parsedConfig.editableFiles.every((entry) => typeof entry === "string")
-  ) {
-    throw new ChallengeValidationError(
-      `La configuración de ${challengeId} no es válida`,
-      500,
-    );
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`${label} no contiene un objeto.`);
   }
 
-  for (const editablePath of parsedConfig.editableFiles) {
-    assertSafeRelativePath(editablePath);
-  }
-
-  return {
-    config: { id: parsedConfig.id, editableFiles: parsedConfig.editableFiles },
-    challengeDirectory,
-  };
+  return parsed as Record<string, unknown>;
 }
 
-function validateFiles(files: ChallengeFile[], allowedFiles: string[]): void {
-  if (!Array.isArray(files)) {
-    throw new ChallengeValidationError("files debe ser un arreglo", 400);
+/**
+ * Resuelve una ruta declarada dentro del caso y verifica que no se escape de su
+ * carpeta. `archivoEditable.ruta` ya viene con el prefijo `files/`, pero se
+ * acepta también sin él.
+ */
+function resolveInsideChallenge(
+  challengeDir: string,
+  declaredPath: string
+): string[] {
+  const candidates = [
+    path.resolve(challengeDir, declaredPath),
+    path.resolve(challengeDir, "files", path.basename(declaredPath)),
+  ];
+
+  const boundary = challengeDir + path.sep;
+  return candidates.filter((candidate) => candidate.startsWith(boundary));
+}
+
+async function readEditableContent(
+  challengeDir: string,
+  declaredPath: string
+): Promise<string | null> {
+  for (const candidate of resolveInsideChallenge(challengeDir, declaredPath)) {
+    const content = await readOptionalText(candidate);
+    if (content !== null) return content;
+  }
+  return null;
+}
+
+/**
+ * Arma el documento completo del caso: `challenge.json` como base, más las
+ * pistas, la explicación y el código semilla del archivo editable.
+ *
+ * Las piezas complementarias son opcionales: si falta alguna, el campo
+ * simplemente no se agrega y el frontend ya sabe representar esa ausencia.
+ */
+export async function loadChallenge(
+  id: string
+): Promise<Record<string, unknown>> {
+  if (!VALID_ID.test(id)) {
+    throw new ChallengeNotFoundError(`Id de caso inválido: ${id}`);
   }
 
-  const allowed = new Set(allowedFiles);
-  const received = new Set<string>();
+  const challengeDir = path.join(CHALLENGES_DIR, id);
 
-  for (const file of files) {
-    if (
-      typeof file !== "object" ||
-      file === null ||
-      typeof file.path !== "string" ||
-      typeof file.content !== "string"
-    ) {
-      throw new ChallengeValidationError("Cada archivo debe incluir path y content", 400);
+  let base: Record<string, unknown>;
+  try {
+    base = parseJson(
+      await readText(path.join(challengeDir, "challenge.json")),
+      `challenge.json de ${id}`
+    );
+  } catch (error) {
+    if (isMissingFile(error)) {
+      throw new ChallengeNotFoundError(`No existe el caso ${id}.`);
     }
-
-    assertSafeRelativePath(file.path);
-    if (!allowed.has(file.path)) {
-      throw new ChallengeValidationError(`Ruta no permitida: ${file.path}`, 400);
-    }
-    if (received.has(file.path)) {
-      throw new ChallengeValidationError(`Archivo duplicado: ${file.path}`, 400);
-    }
-    received.add(file.path);
+    throw error;
   }
-}
 
-function appendOutput(current: string, chunk: Buffer): string {
-  if (Buffer.byteLength(current) >= MAX_CAPTURED_OUTPUT_BYTES) return current;
-  const remaining = MAX_CAPTURED_OUTPUT_BYTES - Buffer.byteLength(current);
-  return current + chunk.subarray(0, remaining).toString("utf8");
-}
+  const combined: Record<string, unknown> = { ...base };
 
-function removeContainer(containerName: string): Promise<string> {
-  return new Promise((resolve) => {
-    let errorOutput = "";
-    let settled = false;
+  // 1. Pistas — `hints.json` las envuelve en `{ "pistas": [...] }`.
+  const hintsSource = await readOptionalText(
+    path.join(challengeDir, "hints.json")
+  );
+  if (hintsSource !== null) {
+    const hints = parseJson(hintsSource, `hints.json de ${id}`);
+    if (Array.isArray(hints.pistas)) {
+      combined.pistas = hints.pistas;
+    }
+  }
 
-    const cleanup = spawn(
-      DOCKER_EXECUTABLE,
-      ["rm", "--force", containerName],
-      {
-        shell: false,
-        windowsHide: true,
-      },
-    );
+  // 2. Explicación final — se entrega como Markdown en crudo.
+  const explanation = await readOptionalText(
+    path.join(challengeDir, "explanation.md")
+  );
+  if (explanation !== null) {
+    combined.explicacionFinal = explanation;
+  }
 
-    const finish = (): void => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(cleanupTimeout);
-      resolve(errorOutput);
-    };
-
-    cleanup.stderr.on("data", (chunk: Buffer) => {
-      errorOutput = appendOutput(errorOutput, chunk);
-    });
-    cleanup.once("error", (error) => {
-      errorOutput = appendOutput(errorOutput, Buffer.from(error.message));
-      finish();
-    });
-    cleanup.once("close", finish);
-
-    const cleanupTimeout = setTimeout(() => {
-      errorOutput = appendOutput(
-        errorOutput,
-        Buffer.from("No se pudo eliminar el contenedor dentro del tiempo esperado"),
-      );
-      cleanup.kill("SIGKILL");
-      finish();
-    }, CONTAINER_CLEANUP_TIMEOUT_MS);
-  });
-}
-
-function executeVitest(
-  sandboxDirectory: string,
-  reportDirectory: string,
-): Promise<ProcessResult> {
-  return new Promise((resolve) => {
-    let stdout = "";
-    let stderr = "";
-    let timedOut = false;
-    let settled = false;
-    let timeout: ReturnType<typeof setTimeout>;
-    let cleanupPromise: Promise<string> | null = null;
-    const executionId = path.basename(sandboxDirectory).toLowerCase();
-    const containerName = `buglab-runner-${executionId}`;
-
-    const child = spawn(
-      DOCKER_EXECUTABLE,
-      [
-        "run",
-        "--rm",
-        "--name",
-        containerName,
-        "--network",
-        "none",
-        "--memory",
-        "256m",
-        "--memory-swap",
-        "256m",
-        "--cpus",
-        "0.5",
-        "--pids-limit",
-        "64",
-        "--read-only",
-        "--cap-drop",
-        "ALL",
-        "--security-opt",
-        "no-new-privileges=true",
-        "--user",
-        "1000:1000",
-        "--init",
-        "--tmpfs",
-        "/tmp:rw,noexec,nosuid,size=64m,mode=1777",
-        "--mount",
-        `type=bind,source=${sandboxDirectory},target=/workspace,readonly`,
-        "--mount",
-        `type=bind,source=${reportDirectory},target=/output`,
-        RUNNER_IMAGE,
-        "run",
-        "tests",
-        "--root",
-        "/workspace",
-        "--pool=threads",
-        "--maxWorkers=1",
-        "--reporter=json",
-        "--outputFile",
-        "/output/vitest-report.json",
-      ],
-      {
-        shell: false,
-        windowsHide: true,
-      },
-    );
-
-    const finish = async (exitCode: number | null): Promise<void> => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      const cleanupError = await cleanupPromise;
-      if (cleanupError) {
-        stderr = appendOutput(stderr, Buffer.from(`\n${cleanupError}`));
+  // 3. Código semilla del archivo editable.
+  const editable = base.archivoEditable;
+  if (typeof editable === "object" && editable !== null) {
+    const declaredPath = (editable as { ruta?: unknown }).ruta;
+    if (typeof declaredPath === "string") {
+      const content = await readEditableContent(challengeDir, declaredPath);
+      if (content !== null) {
+        combined.archivoEditable = {
+          ...(editable as Record<string, unknown>),
+          contenidoInicial: content,
+        };
       }
-      resolve({
-        stdout,
-        stderr,
-        exitCode: timedOut ? null : exitCode,
-        timedOut,
-      });
-    };
-
-    child.stdout.on("data", (chunk: Buffer) => {
-      stdout = appendOutput(stdout, chunk);
-    });
-    child.stderr.on("data", (chunk: Buffer) => {
-      stderr = appendOutput(stderr, chunk);
-    });
-    child.once("error", (error) => {
-      stderr = appendOutput(stderr, Buffer.from(error.message));
-      void finish(null);
-    });
-    child.once("close", (exitCode) => {
-      void finish(exitCode);
-    });
-
-    timeout = setTimeout(() => {
-      timedOut = true;
-      cleanupPromise = removeContainer(containerName);
-      child.kill("SIGKILL");
-    }, VALIDATION_TIMEOUT_MS);
-  });
-}
-
-function numberOrZero(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-async function readVitestReport(reportPath: string): Promise<VitestJsonReport | null> {
-  try {
-    return JSON.parse(await readFile(reportPath, "utf8")) as VitestJsonReport;
-  } catch {
-    return null;
-  }
-}
-
-function extractTests(report: VitestJsonReport | null): ChallengeTestResult[] {
-  if (!report || !Array.isArray(report.testResults)) return [];
-
-  return report.testResults.flatMap((fileResult: unknown) => {
-    if (
-      typeof fileResult !== "object" ||
-      fileResult === null ||
-      !("assertionResults" in fileResult) ||
-      !Array.isArray(fileResult.assertionResults)
-    ) {
-      return [];
     }
-
-    return fileResult.assertionResults.map((assertion: unknown) => {
-      const value =
-        typeof assertion === "object" && assertion !== null ? assertion : {};
-      const name =
-        "title" in value && typeof value.title === "string"
-          ? value.title
-          : "fullName" in value && typeof value.fullName === "string"
-            ? value.fullName
-            : "Test sin nombre";
-
-      return {
-        name,
-        passed: "status" in value && value.status === "passed",
-      };
-    });
-  });
-}
-
-export async function validateChallenge(
-  challengeId: string,
-  files: ChallengeFile[],
-): Promise<ChallengeValidationResult> {
-  const { config, challengeDirectory } = await loadChallenge(challengeId);
-  validateFiles(files, config.editableFiles);
-
-  const officialTestsDirectory = path.join(challengeDirectory, "tests");
-  try {
-    await access(officialTestsDirectory, constants.R_OK);
-  } catch {
-    throw new ChallengeValidationError(
-      "No se encuentran los tests oficiales",
-      500,
-    );
   }
 
-  await mkdir(TEMP_ROOT, { recursive: true });
-  const sandboxDirectory = await mkdtemp(path.join(TEMP_ROOT, `${challengeId}-`));
-  const reportDirectory = path.join(sandboxDirectory, ".results");
-  const reportPath = path.join(reportDirectory, "vitest-report.json");
-
-  try {
-    await mkdir(reportDirectory);
-    await chmod(reportDirectory, 0o777);
-
-    for (const file of files) {
-      const destination = path.resolve(sandboxDirectory, file.path);
-      if (!isPathInside(sandboxDirectory, destination)) {
-        throw new ChallengeValidationError(`Ruta no permitida: ${file.path}`, 400);
-      }
-
-      await mkdir(path.dirname(destination), { recursive: true });
-      await writeFile(destination, file.content, "utf8");
-    }
-
-    await cp(officialTestsDirectory, path.join(sandboxDirectory, "tests"), {
-      recursive: true,
-      force: false,
-      errorOnExist: true,
-    });
-
-    const processResult = await executeVitest(sandboxDirectory, reportDirectory);
-    const report = await readVitestReport(reportPath);
-    const tests = extractTests(report);
-
-    return {
-      challengeId,
-      success:
-        processResult.exitCode === 0 &&
-        !processResult.timedOut &&
-        report?.success === true,
-      passed: numberOrZero(report?.numPassedTests),
-      failed: numberOrZero(report?.numFailedTests),
-      total: numberOrZero(report?.numTotalTests),
-      tests,
-      stdout: processResult.stdout,
-      stderr: processResult.stderr,
-      exitCode: processResult.exitCode,
-      timedOut: processResult.timedOut,
-    };
-  } finally {
-    await rm(sandboxDirectory, { recursive: true, force: true });
-  }
+  return combined;
 }
