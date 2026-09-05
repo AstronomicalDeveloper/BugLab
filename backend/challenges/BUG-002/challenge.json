@@ -1,35 +1,43 @@
 {
   "id": "BUG-002",
-  "titulo": "El formulario se valida antes de abrirse",
+  "titulo": "El formulario oculto sigue validando",
   "nivel": "intermedio",
-  "aprendizajePrincipal": "Ciclo de vida, estado y momento correcto de ejecución de la validación",
+  "aprendizajePrincipal": "Ciclo de vida, renderizado condicional, montaje y limpieza de efectos",
   "reporte": {
-    "sintoma": "Al abrir el formulario para crear un producto, ya se muestran mensajes de error de los campos requeridos, aunque el usuario todavía no ha escrito ni enviado nada.",
-    "comportamientoEsperado": "El formulario debe mostrarse limpio al abrirse. Los errores solo deben aparecer después de intentar enviarlo.",
+    "sintoma": "Aunque el formulario está cerrado, permanece montado y su efecto de validación se ejecuta en segundo plano.",
+    "comportamientoEsperado": "El formulario cerrado debe estar desmontado. Al abrirlo debe montarse limpio, mostrar errores solo después del envío y detener sus efectos al cerrarse.",
     "pasosParaReproducir": [
-      "Abrir la página del formulario",
-      "Observar que ya hay mensajes de error visibles sin haber escrito ni enviado nada"
+      "Abrir la página con el formulario cerrado",
+      "Observar que la validación ya se ejecuta aunque el formulario no es visible",
+      "Abrir y cerrar el formulario",
+      "Comprobar que la validación continúa porque el componente nunca se desmontó"
     ]
   },
   "arquitectura": {
     "componentes": [
-      { "nombre": "RegisterPage", "descripcion": "Página contenedora del formulario" },
-      { "nombre": "RegisterForm", "descripcion": "Formulario que captura los datos y muestra errores" },
-      { "nombre": "validation.js", "descripcion": "Módulo con las reglas de validación y el momento en que se muestran" }
+      { "nombre": "RegisterPage", "descripcion": "Controla si el formulario está abierto y debe estar montado" },
+      { "nombre": "RegisterForm", "descripcion": "Formulario auxiliar que valida mediante un efecto y limpia ese efecto al desmontarse" }
     ],
-    "flujo": "RegisterPage → RegisterForm → validation.js"
+    "flujo": "RegisterPage → montaje condicional → RegisterForm → useEffect"
   },
   "arbolArchivos": [
-    "files/RegisterPage.jsx",
-    "files/RegisterForm.jsx",
-    "files/validation.js",
+    "src/pages/RegisterPage.jsx",
+    "src/components/RegisterForm.jsx",
     "tests/validation.test.js"
   ],
   "archivoEditable": {
-    "ruta": "files/validation.js"
+    "ruta": "src/pages/RegisterPage.jsx"
   },
+  "archivosAuxiliares": [
+    "src/components/RegisterForm.jsx"
+  ],
   "tests": [
-    { "id": "before-submit", "descripcion": "No muestra errores antes de enviar", "entrada": false, "esperado": false },
-    { "id": "after-submit", "descripcion": "Muestra errores después de enviar", "entrada": true, "esperado": true }
+    { "id": "closed-unmounted", "descripcion": "No monta el formulario mientras está cerrado" },
+    { "id": "closed-no-effect", "descripcion": "No valida mientras está cerrado" },
+    { "id": "open-mounts", "descripcion": "Monta el formulario al abrirlo" },
+    { "id": "clean-first-render", "descripcion": "No muestra errores en el primer montaje" },
+    { "id": "submit-errors", "descripcion": "Muestra errores después de enviar" },
+    { "id": "close-unmounts", "descripcion": "Desmonta el formulario al cerrarlo" },
+    { "id": "cleanup-effects", "descripcion": "Detiene la validación después de desmontarlo" }
   ]
 }

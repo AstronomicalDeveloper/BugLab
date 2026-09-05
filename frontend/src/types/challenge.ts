@@ -56,6 +56,19 @@ export type ChallengeExplanation =
   | { formato: "markdown"; texto: string }
   | { formato: "campos"; campos: ExplanationFields };
 
+/**
+ * Un archivo del caso con su contenido.
+ *
+ * Se sirven todos, editables o no: descubrir en cuál está el fallo es parte
+ * del ejercicio, así que el explorador tiene que poder abrirlos todos. Solo
+ * el marcado `editable` acepta cambios.
+ */
+export interface ChallengeFile {
+  ruta: string;
+  contenido: string;
+  editable: boolean;
+}
+
 export interface NormalizedChallenge {
   id: string;
   titulo: string;
@@ -63,8 +76,10 @@ export interface NormalizedChallenge {
   aprendizajePrincipal: string;
   reporte: ChallengeReport;
   arquitectura: ChallengeArchitecture;
-  /** Rutas de referencia. No hay contenido asociado: no son navegables. */
+  /** Rutas declaradas por el caso, en orden. */
   arbolArchivos: string[];
+  /** Los archivos navegables, con su contenido. */
+  archivos: ChallengeFile[];
   /** Siempre array, aunque el JSON traiga `archivoEditable` singular. */
   editableFiles: EditableFile[];
   /** Vacío si el caso no embebe pistas en `challenge.json`. */

@@ -1,7 +1,9 @@
+import type { ChallengeFile } from "../types/challenge";
+
 interface FileTreeProps {
-  /** Rutas de referencia del caso. No hay contenido asociado: no se navegan. */
-  paths: string[];
-  editablePaths: string[];
+  files: ChallengeFile[];
+  activePath: string | null;
+  onSelect: (ruta: string) => void;
 }
 
 function FileIcon() {
@@ -20,25 +22,18 @@ function FileIcon() {
   );
 }
 
-function PencilIcon() {
-  return (
-    <svg
-      className="challenge-tree__icon"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M11.5 2.5 13.5 4.5 5.5 12.5 2.5 13.5 3.5 10.5 11.5 2.5Z" />
-    </svg>
-  );
-}
-
-export default function FileTree({ paths, editablePaths }: FileTreeProps) {
-  const editable = new Set(editablePaths);
-
+/**
+ * Explorador del caso. Todos los archivos se abren.
+ *
+ * A propósito NO se marca cuál es editable: averiguar dónde está el fallo es
+ * el ejercicio. Que un archivo sea de solo lectura se descubre al abrirlo, no
+ * antes, y eso se avisa dentro del editor.
+ */
+export default function FileTree({
+  files,
+  activePath,
+  onSelect,
+}: FileTreeProps) {
   return (
     <section
       className="challenge-panel challenge-surface challenge-surface--level-2"
@@ -49,32 +44,33 @@ export default function FileTree({ paths, editablePaths }: FileTreeProps) {
       </h2>
 
       <ul className="challenge-tree">
-        {paths.map((path) => {
-          const isEditable = editable.has(path);
+        {files.map((file) => {
+          const isActive = file.ruta === activePath;
           return (
-            <li
-              key={path}
-              className={
-                isEditable
-                  ? "challenge-tree__item challenge-tree__item--editable"
-                  : "challenge-tree__item"
-              }
-            >
-              {isEditable ? <PencilIcon /> : <FileIcon />}
-              <span className="challenge-tree__path" title={path}>
-                {path}
-              </span>
-              {isEditable && (
-                <span className="challenge-tree__badge">Editable</span>
-              )}
+            <li key={file.ruta}>
+              <button
+                type="button"
+                onClick={() => onSelect(file.ruta)}
+                aria-current={isActive ? "true" : undefined}
+                className={
+                  isActive
+                    ? "challenge-tree__item challenge-tree__item--active"
+                    : "challenge-tree__item"
+                }
+              >
+                <FileIcon />
+                <span className="challenge-tree__path" title={file.ruta}>
+                  {file.ruta}
+                </span>
+              </button>
             </li>
           );
         })}
       </ul>
 
       <p className="challenge-tree__legend">
-        Solo el archivo marcado como editable se abre en el editor. El resto se
-        lista como referencia del flujo.
+        Abre cualquier archivo para leerlo. Solo uno acepta cambios: encontrar
+        cuál es parte del ejercicio.
       </p>
     </section>
   );

@@ -68,21 +68,3 @@ sequenceDiagram
     S-->>A: Resultado (pasa/falla por test)
     A-->>E: JSON con resultados + pistas disponibles
 ```
-
-## 4. Integración con APIs o IA
-
-No aplica en este MVP — no hay integración con APIs externas ni modelos de IA. Toda la lógica de validación es local, mediante tests de comportamiento predefinidos por caso.
-
-## 5. Esquema de datos de un caso (JSON)
-
-```json
-{
-  "id": "BUG-001",
-  "difficulty": "easy",
-  "report": "Un usuario de exactamente 18 años no puede registrarse.",
-  "architecture": "RegisterPage → RegisterForm → validation.js",
-  "files": ["validation.js"],
-  "hints": ["Revisa la condición de edad mínima"],
-  "explanation": "La condición usaba > en vez de >=, excluyendo el valor límite."
-}
-```

@@ -1,9 +1,14 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
+  // Solo se compila src/. `vitest.config.ts` vive en la raiz de backend/ y lo
+  // lee vitest por su cuenta, no hace falta pasarlo por tsc.
+  "include": ["src"],
   "compilerOptions": {
     // File Layout
-    // "rootDir": "./src",
-    // "outDir": "./dist",
+    // Sin outDir, `tsc` emite el .js/.d.ts al lado de cada fuente y ensucia
+    // src/. Ademas `npm start` arranca `dist/server.js`, que asi nunca existia.
+    "rootDir": "./src",
+    "outDir": "./dist",
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module

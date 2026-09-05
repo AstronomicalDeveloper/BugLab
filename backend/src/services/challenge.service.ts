@@ -81,7 +81,7 @@ function resolveInsideChallenge(
   return candidates.filter((candidate) => candidate.startsWith(boundary));
 }
 
-async function readEditableContent(
+async function readDeclaredFile(
   challengeDir: string,
   declaredPath: string
 ): Promise<string | null> {
@@ -90,6 +90,52 @@ async function readEditableContent(
     if (content !== null) return content;
   }
   return null;
+}
+
+/** Un archivo del caso tal como lo consume el explorador del frontend. */
+interface ChallengeFile {
+  ruta: string;
+  contenido: string;
+  editable: boolean;
+}
+
+/**
+ * Los tests oficiales pertenecen al runner, no al material navegable del caso.
+ * Se reconoce el directorio lógico `tests/` sin depender del separador del SO.
+ */
+function isOfficialTestPath(declaredPath: string): boolean {
+  const normalized = declaredPath.replace(/\\/g, "/");
+  return normalized === "tests" || normalized.startsWith("tests/");
+}
+
+/**
+ * Lee el contenido de todos los archivos declarados en `arbolArchivos`.
+ *
+ * El explorador los muestra todos y solo uno es editable: descubrir cuál hay
+ * que tocar es parte del ejercicio, así que el resto tiene que poder abrirse
+ * y leerse igual. Los que no existen en disco se omiten en vez de romper la
+ * carga del caso.
+ */
+async function readChallengeFiles(
+  challengeDir: string,
+  declaredPaths: unknown,
+  editablePath: string | null
+): Promise<ChallengeFile[]> {
+  if (!Array.isArray(declaredPaths)) return [];
+
+  const files = await Promise.all(
+    declaredPaths.map(async (declared): Promise<ChallengeFile | null> => {
+      if (typeof declared !== "string") return null;
+      if (isOfficialTestPath(declared)) return null;
+
+      const contenido = await readDeclaredFile(challengeDir, declared);
+      if (contenido === null) return null;
+
+      return { ruta: declared, contenido, editable: declared === editablePath };
+    })
+  );
+
+  return files.filter((file): file is ChallengeFile => file !== null);
 }
 
 /**
@@ -144,10 +190,13 @@ export async function loadChallenge(
 
   // 3. Código semilla del archivo editable.
   const editable = base.archivoEditable;
+  let editablePath: string | null = null;
+
   if (typeof editable === "object" && editable !== null) {
     const declaredPath = (editable as { ruta?: unknown }).ruta;
     if (typeof declaredPath === "string") {
-      const content = await readEditableContent(challengeDir, declaredPath);
+      editablePath = declaredPath;
+      const content = await readDeclaredFile(challengeDir, declaredPath);
       if (content !== null) {
         combined.archivoEditable = {
           ...(editable as Record<string, unknown>),
@@ -156,6 +205,21 @@ export async function loadChallenge(
       }
     }
   }
+
+  // 4. Contenido de todos los archivos del caso, editables o no, para que el
+  //    explorador pueda abrirlos. Los tests oficiales siguen declarados en el
+  //    challenge de disco para el runner, pero no forman parte de la respuesta.
+  if (Array.isArray(base.arbolArchivos)) {
+    combined.arbolArchivos = base.arbolArchivos.filter(
+      (declared) =>
+        typeof declared !== "string" || !isOfficialTestPath(declared)
+    );
+  }
+  combined.archivos = await readChallengeFiles(
+    challengeDir,
+    combined.arbolArchivos,
+    editablePath
+  );
 
   return combined;
 }

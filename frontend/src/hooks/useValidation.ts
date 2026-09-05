@@ -50,7 +50,10 @@ export function useValidation(caseId: string): ValidationState {
   );
 
   const isSolved =
-    result !== null && result.total > 0 && result.passed === result.total;
+    result !== null &&
+    result.success === true &&
+    result.total > 0 &&
+    result.passed === result.total;
 
   return { status, result, error, attempts, isSolved, run };
 }

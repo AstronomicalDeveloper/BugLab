@@ -19,7 +19,7 @@ function ChallengePageRoute() {
 }
 
 // Dentro del <Routes> del shell:
-<Route path="/challenge/:caseId" element={<ChallengePageRoute />} />
+<Route path="/challenges/:caseId" element={<ChallengePageRoute />} />
 ```
 
 ## Props

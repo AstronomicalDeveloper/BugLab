@@ -2,37 +2,46 @@
   "id": "BUG-003",
   "titulo": "Filtrar productos altera el inventario original",
   "nivel": "dificil",
-  "aprendizajePrincipal": "Referencias, mutabilidad, estado compartido y efectos secundarios",
+  "aprendizajePrincipal": "Referencias de arrays y objetos, copias superficiales, aislamiento entre capas y efectos secundarios",
   "reporte": {
-    "sintoma": "Al aplicar el filtro 'Solo disponibles', algunos productos desaparecen del inventario incluso después de quitar el filtro.",
-    "comportamientoEsperado": "Filtrar debe devolver solo los productos disponibles, sin alterar el inventario original ni afectar consultas posteriores.",
+    "sintoma": "Después de filtrar productos disponibles, el resumen de inventario informa menos productos, stock y valor aunque esa capa nunca modificó los datos.",
+    "comportamientoEsperado": "El filtro debe devolver una colección independiente con productos disponibles, sin alterar el array fuente, sus objetos ni los resultados de otros consumidores.",
     "pasosParaReproducir": [
-      "Cargar el inventario completo",
-      "Activar 'Solo disponibles'",
-      "Desactivar el filtro",
-      "Observar que el inventario ya no tiene todos los productos originales"
+      "Crear una colección de inventario",
+      "Calcular su resumen de productos, stock y valor",
+      "Obtener los productos disponibles mediante filterInventory",
+      "Volver a consultar el resumen usando la colección original",
+      "Observar que el filtro alteró datos compartidos por ambas capas"
     ]
   },
   "arquitectura": {
     "componentes": [
-      { "nombre": "RegisterPage", "descripcion": "Página contenedora del inventario" },
-      { "nombre": "RegisterForm", "descripcion": "Componente que muestra el inventario y el control de filtro" },
-      { "nombre": "validation.js", "descripcion": "Módulo con la lógica de filtrado" }
+      { "nombre": "inventoryData", "descripcion": "Crea una colección nueva de productos para cada flujo" },
+      { "nombre": "filterInventory", "descripcion": "Selecciona productos disponibles; contiene la mutación accidental" },
+      { "nombre": "inventorySummary", "descripcion": "Segundo consumidor que calcula productos, stock y valor desde la colección original" }
     ],
-    "flujo": "RegisterPage → RegisterForm → validation.js"
+    "flujo": "inventoryData → referencia compartida → filterInventory + inventorySummary"
   },
   "arbolArchivos": [
-    "files/RegisterPage.jsx",
-    "files/RegisterForm.jsx",
-    "files/validation.js",
+    "src/data/inventoryData.js",
+    "src/services/filterInventory.js",
+    "src/services/inventorySummary.js",
     "tests/validation.test.js"
   ],
   "archivoEditable": {
-    "ruta": "files/validation.js"
+    "ruta": "src/services/filterInventory.js"
   },
+  "archivosAuxiliares": [
+    "src/data/inventoryData.js",
+    "src/services/inventorySummary.js"
+  ],
   "tests": [
-    { "id": "only-available", "descripcion": "Devuelve solo los productos disponibles", "esperado": "Todos los elementos del resultado tienen available = true" },
-    { "id": "no-mutation", "descripcion": "No altera el tamaño del inventario original al filtrar", "esperado": "El inventario conserva su cantidad original de productos" },
-    { "id": "idempotent", "descripcion": "Filtrar dos veces seguidas da el mismo resultado", "esperado": "Ambas llamadas devuelven la misma cantidad de productos" }
+    { "id": "only-available", "descripcion": "Devuelve únicamente los productos disponibles" },
+    { "id": "source-unchanged", "descripcion": "Conserva longitud, orden, propiedades y valores de la fuente" },
+    { "id": "independent-array", "descripcion": "Devuelve un arreglo con una referencia independiente" },
+    { "id": "array-isolation", "descripcion": "Modificar el arreglo resultado no altera la fuente" },
+    { "id": "object-isolation", "descripcion": "Modificar un objeto resultado no altera el objeto fuente" },
+    { "id": "independent-runs", "descripcion": "Ejecuciones sucesivas producen resultados independientes" },
+    { "id": "consumer-isolation", "descripcion": "El consumidor de resumen conserva sus valores después del filtro" }
   ]
 }
