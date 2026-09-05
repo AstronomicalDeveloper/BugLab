@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import {
   ChallengeValidationError,
   validateChallenge as validateChallengeService,
-} from "../services/challenge.service.js";
+} from "../services/runner.service.js";
 
 export async function validateChallenge(
   req: Request,
