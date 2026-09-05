@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import challengeRoutes from "./routes/challenge.routes.js";
 import validationRoutes from "./routes/validation.routes.js";
 
 const app = express();
@@ -14,6 +15,7 @@ app.get("/", (_req, res) => {
   });
 });
 
+app.use("/api/challenges", challengeRoutes);
 app.use("/api/validation", validationRoutes);
 
 const PORT = 3000;

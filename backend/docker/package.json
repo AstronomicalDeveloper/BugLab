@@ -1,0 +1,9 @@
+{
+  "name": "buglab-runner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "vitest": "5.0.0"
+  }
+}

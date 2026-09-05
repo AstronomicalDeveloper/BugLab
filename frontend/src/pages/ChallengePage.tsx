@@ -1,66 +1,185 @@
-import { useParams } from "react-router-dom";
-import { mockChallenges } from "../data/mockChallenges";
-import { Button } from "../components/common/Button";
-import { DifficultyBadge } from "../components/common/DifficultyBadge";
-
 /**
- * Placeholder de la pantalla principal del desafío (Propuesta §4).
+ * Experiencia de un caso de debugging.
  *
- * Los componentes del workspace de 3 paneles ya existen en src/components/
- * (WorkspacePanel, ContextPanel, TestRunnerPanel). Se conectan acá en la
- * siguiente tanda; por ahora esta ruta existe para que los enlaces del
- * catálogo lleven a algún lado.
+ * Se monta dentro del shell general de la app. No dibuja el fondo de página ni
+ * la navegación global, no crea router propio y no usa `100vh`/`100vw`: ocupa
+ * el ancho de su contenedor y el shell decide el layout alrededor.
+ *
+ * Para registrarla en el router del shell:
+ *
+ *   import ChallengePage from "./pages/ChallengePage";
+ *
+ *   <Route
+ *     path="/challenge/:caseId"
+ *     element={<ChallengePageRoute />}
+ *   />
+ *
+ *   // Adaptador de 3 líneas, propiedad del shell (evita que este paquete
+ *   // dependa de react-router):
+ *   function ChallengePageRoute() {
+ *     const { caseId } = useParams();
+ *     return <ChallengePage caseId={caseId!} />;
+ *   }
  */
-export function ChallengePage() {
-  const { challengeId } = useParams();
-  const challenge = mockChallenges.find((item) => item.id === challengeId);
+import { useEffect, useRef, useState } from "react";
+import ArchitectureView from "../components/ArchitectureView";
+import ChallengeHeader from "../components/ChallengeHeader";
+import CodeEditor from "../components/CodeEditor";
+import ExecuteButton from "../components/ExecuteButton";
+import ExplanationModal from "../components/ExplanationModal";
+import FileTree from "../components/FileTree";
+import HintSystem from "../components/HintSystem";
+import ReportViewer from "../components/ReportViewer";
+import TestResults from "../components/TestResults";
+import { useChallengeLoader } from "../hooks/useChallengeLoader";
+import { useEditorState } from "../hooks/useEditorState";
+import { useValidation } from "../hooks/useValidation";
+import type { NormalizedChallenge } from "../types/challenge";
+import "../styles/challenge.css";
 
-  if (!challenge) {
-    return (
-      <main className="mx-auto max-w-3xl px-4 pt-24 pb-24 sm:px-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Ese desafío no existe
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-ink-muted">
-          Puede que el enlace esté mal escrito. Vuelve al catálogo para elegir
-          uno de los tres casos disponibles.
-        </p>
-        <div className="mt-8">
-          <Button to="/">Ver desafíos</Button>
-        </div>
-      </main>
-    );
-  }
+export interface ChallengePageProps {
+  /** Id del caso a abrir, por ejemplo el `:caseId` de la ruta del shell. */
+  caseId: string;
+  /** Se invoca una sola vez, cuando todos los tests del caso pasan. */
+  onCaseResolved?: (caseId: string) => void;
+}
+
+export default function ChallengePage({
+  caseId,
+  onCaseResolved,
+}: ChallengePageProps) {
+  const { status, challenge, error } = useChallengeLoader(caseId);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pt-16 pb-24 sm:px-6 sm:pt-24">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="font-mono text-xs text-ink-muted">
-          {challenge.code}
-        </span>
-        <DifficultyBadge difficulty={challenge.difficulty} />
+    <div className="challenge-root">
+      {status === "loading" && <LoadingState />}
+
+      {status === "error" && (
+        <div className="challenge-state challenge-state--error challenge-surface challenge-surface--level-2">
+          <p className="challenge-state__title">
+            No se pudo conectar con el servidor de validación.
+          </p>
+          {error && <p className="challenge-state__detail">{error}</p>}
+        </div>
+      )}
+
+      {status === "ready" && challenge && (
+        <ChallengeWorkspace
+          key={challenge.id}
+          challenge={challenge}
+          caseId={caseId}
+          onCaseResolved={onCaseResolved}
+        />
+      )}
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div
+      className="challenge-state challenge-surface challenge-surface--level-2"
+      aria-busy="true"
+      aria-label="Cargando el caso"
+    >
+      <div className="challenge-skeleton" style={{ width: "40%" }} />
+      <div className="challenge-skeleton" style={{ width: "70%" }} />
+      <div className="challenge-skeleton" style={{ width: "55%" }} />
+    </div>
+  );
+}
+
+interface ChallengeWorkspaceProps {
+  challenge: NormalizedChallenge;
+  caseId: string;
+  onCaseResolved?: (caseId: string) => void;
+}
+
+function ChallengeWorkspace({
+  challenge,
+  caseId,
+  onCaseResolved,
+}: ChallengeWorkspaceProps) {
+  const editor = useEditorState(challenge.editableFiles);
+  const validation = useValidation(caseId);
+  const [isExplanationOpen, setExplanationOpen] = useState(false);
+  const notified = useRef(false);
+
+  // El shell se entera del progreso por callback, no por un store compartido.
+  useEffect(() => {
+    if (validation.isSolved && !notified.current) {
+      notified.current = true;
+      onCaseResolved?.(caseId);
+    }
+  }, [validation.isSolved, onCaseResolved, caseId]);
+
+  const editablePaths = challenge.editableFiles.map((file) => file.ruta);
+  const failedAttempt =
+    validation.status === "done" && !validation.isSolved;
+
+  return (
+    <>
+      <ChallengeHeader
+        id={challenge.id}
+        titulo={challenge.titulo}
+        nivel={challenge.nivel}
+        aprendizajePrincipal={challenge.aprendizajePrincipal}
+        isSolved={validation.isSolved}
+      />
+
+      <div className="challenge-layout">
+        <aside className="challenge-col">
+          <ReportViewer reporte={challenge.reporte} />
+          <ArchitectureView
+            arquitectura={challenge.arquitectura}
+            editablePaths={editablePaths}
+          />
+          <FileTree
+            paths={challenge.arbolArchivos}
+            editablePaths={editablePaths}
+          />
+          <HintSystem pistas={challenge.pistas} />
+        </aside>
+
+        <section className="challenge-col">
+          <CodeEditor
+            files={challenge.editableFiles}
+            contents={editor.contents}
+            onChange={editor.setContent}
+            onReset={editor.resetFile}
+            isDirty={editor.isDirty}
+          />
+
+          <div className="challenge-actions">
+            <ExecuteButton
+              onClick={() => void validation.run(editor.submittedFiles)}
+              isRunning={validation.status === "running"}
+              disabled={challenge.editableFiles.length === 0}
+            />
+            {failedAttempt && (
+              <span className="challenge-actions__hint">
+                Intento {validation.attempts}: revisa el reporte o pide una pista.
+              </span>
+            )}
+          </div>
+
+          <TestResults
+            status={validation.status}
+            result={validation.result}
+            error={validation.error}
+            isSolved={validation.isSolved}
+            explanationAvailable={challenge.explicacionFinal !== null}
+            onOpenExplanation={() => setExplanationOpen(true)}
+          />
+        </section>
       </div>
 
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-        {challenge.title}
-      </h1>
-      <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-        {challenge.report.symptom}
-      </p>
-
-      <div className="glass-2 mt-10 rounded-xl p-6">
-        <p className="text-sm leading-relaxed text-ink-muted">
-          El entorno de trabajo de este caso todavía no está conectado. El
-          explorador, el editor y el panel de pruebas llegan en la próxima
-          entrega.
-        </p>
-      </div>
-
-      <div className="mt-8">
-        <Button to="/" variant="ghost">
-          Volver a desafíos
-        </Button>
-      </div>
-    </main>
+      {isExplanationOpen && challenge.explicacionFinal && (
+        <ExplanationModal
+          explicacion={challenge.explicacionFinal}
+          onClose={() => setExplanationOpen(false)}
+        />
+      )}
+    </>
   );
 }

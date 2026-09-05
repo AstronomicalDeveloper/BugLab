@@ -17,7 +17,7 @@ export function ClosingCta() {
           </p>
         </div>
 
-        <Button to={`/challenges/${first.id}`} size="lg" className="shrink-0">
+        <Button to={`/challenges/${first.code}`} size="lg" className="shrink-0">
           Comenzar con {first.code}
         </Button>
       </div>

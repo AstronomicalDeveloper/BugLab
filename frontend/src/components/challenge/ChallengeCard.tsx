@@ -17,7 +17,7 @@ export interface ChallengeCardProps {
 export function ChallengeCard({ challenge, status }: ChallengeCardProps) {
   return (
     <Link
-      to={`/challenges/${challenge.id}`}
+      to={`/challenges/${challenge.code}`}
       className="glass-2 group flex flex-col rounded-xl p-5 transition-colors hover:border-accent/45"
     >
       <div className="flex items-center justify-between gap-3">

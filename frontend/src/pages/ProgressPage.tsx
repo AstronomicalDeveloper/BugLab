@@ -13,7 +13,7 @@ export function ProgressPage() {
   const progress = useProgress();
 
   const statuses = mockChallenges.map((challenge) =>
-    resolveStatus(progress, challenge.id, challenge.status),
+    resolveStatus(progress, challenge.code, challenge.status),
   );
   const resolved = statuses.filter((status) => status === "resuelto").length;
   const inProgress = statuses.filter((status) => status === "en-analisis").length;

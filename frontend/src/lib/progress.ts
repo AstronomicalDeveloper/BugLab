@@ -42,11 +42,38 @@ export function writeProgress(progress: ProgressMap): void {
   }
 }
 
-/** El estado guardado si existe; si no, el que trae el desafío por defecto. */
+/**
+ * El estado guardado si existe; si no, el que trae el desafío por defecto.
+ * La clave es el código del caso en mayúscula ("BUG-001"), el mismo id que
+ * usan el backend y `ChallengePage`.
+ */
 export function resolveStatus(
   progress: ProgressMap,
-  challengeId: string,
+  caseId: string,
   fallback: ChallengeStatus,
 ): ChallengeStatus {
-  return progress[challengeId]?.status ?? fallback;
+  return progress[caseId]?.status ?? fallback;
+}
+
+/**
+ * Marca un caso como resuelto. Es lo que el shell le pasa a `ChallengePage`
+ * como `onCaseResolved`: se invoca una sola vez, cuando pasan todos los tests.
+ */
+export function markResolved(caseId: string): void {
+  const progress = readProgress();
+  const previous = progress[caseId];
+
+  writeProgress({
+    ...progress,
+    [caseId]: {
+      status: "resuelto",
+      hintsUsed: previous?.hintsUsed ?? 0,
+      testsPassed: previous?.testsPassed ?? 0,
+      testsTotal: previous?.testsTotal ?? 0,
+    },
+  });
+
+  // useProgress escucha "storage", que solo dispara en OTRAS pestañas. Este
+  // evento sintético refresca también la pestaña que acaba de escribir.
+  window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
 }

@@ -1,0 +1,35 @@
+{
+  "id": "BUG-002",
+  "titulo": "El formulario se valida antes de abrirse",
+  "nivel": "intermedio",
+  "aprendizajePrincipal": "Ciclo de vida, estado y momento correcto de ejecución de la validación",
+  "reporte": {
+    "sintoma": "Al abrir el formulario para crear un producto, ya se muestran mensajes de error de los campos requeridos, aunque el usuario todavía no ha escrito ni enviado nada.",
+    "comportamientoEsperado": "El formulario debe mostrarse limpio al abrirse. Los errores solo deben aparecer después de intentar enviarlo.",
+    "pasosParaReproducir": [
+      "Abrir la página del formulario",
+      "Observar que ya hay mensajes de error visibles sin haber escrito ni enviado nada"
+    ]
+  },
+  "arquitectura": {
+    "componentes": [
+      { "nombre": "RegisterPage", "descripcion": "Página contenedora del formulario" },
+      { "nombre": "RegisterForm", "descripcion": "Formulario que captura los datos y muestra errores" },
+      { "nombre": "validation.js", "descripcion": "Módulo con las reglas de validación y el momento en que se muestran" }
+    ],
+    "flujo": "RegisterPage → RegisterForm → validation.js"
+  },
+  "arbolArchivos": [
+    "files/RegisterPage.jsx",
+    "files/RegisterForm.jsx",
+    "files/validation.js",
+    "tests/validation.test.js"
+  ],
+  "archivoEditable": {
+    "ruta": "files/validation.js"
+  },
+  "tests": [
+    { "id": "before-submit", "descripcion": "No muestra errores antes de enviar", "entrada": false, "esperado": false },
+    { "id": "after-submit", "descripcion": "Muestra errores después de enviar", "entrada": true, "esperado": true }
+  ]
+}

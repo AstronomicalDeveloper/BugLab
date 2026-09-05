@@ -1,0 +1,58 @@
+{
+  "id": "BUG-001",
+  "titulo": "El usuario de 18 años no puede registrarse",
+  "nivel": "facil",
+  "aprendizajePrincipal": "Requisitos, condiciones de frontera y seguimiento básico del flujo",
+  "reporte": {
+    "sintoma": "Usuarios que ingresan exactamente 18 años reciben un error de validación al registrarse, aunque el requisito indica que 18 años debería ser una edad válida.",
+    "comportamientoEsperado": "El formulario debe aceptar edades de 18 años en adelante y rechazar edades menores o entradas inválidas.",
+    "pasosParaReproducir": [
+      "Abrir el formulario de registro",
+      "Ingresar edad = 18",
+      "Enviar el formulario"
+    ]
+  },
+  "arquitectura": {
+    "componentes": [
+      { "nombre": "RegisterPage", "descripcion": "Página contenedora del flujo de registro" },
+      { "nombre": "RegisterForm", "descripcion": "Formulario que captura los datos del usuario" },
+      { "nombre": "validation.js", "descripcion": "Módulo con las reglas de validación de campos" }
+    ],
+    "flujo": "RegisterPage → RegisterForm → validation.js"
+  },
+  "arbolArchivos": [
+    "files/RegisterPage.jsx",
+    "files/RegisterForm.jsx",
+    "files/validation.js",
+    "tests/validation.test.js"
+  ],
+  "archivoEditable": {
+    "ruta": "files/validation.js"
+  },
+  "tests": [
+    {
+      "id": "age-18",
+      "descripcion": "Acepta edad = 18",
+      "entrada": 18,
+      "esperado": true
+    },
+    {
+      "id": "age-19",
+      "descripcion": "Acepta edad = 19",
+      "entrada": 19,
+      "esperado": true
+    },
+    {
+      "id": "age-17",
+      "descripcion": "Rechaza edad = 17",
+      "entrada": 17,
+      "esperado": false
+    },
+    {
+      "id": "negative-age",
+      "descripcion": "Rechaza edad negativa",
+      "entrada": -1,
+      "esperado": false
+    }
+  ]
+}

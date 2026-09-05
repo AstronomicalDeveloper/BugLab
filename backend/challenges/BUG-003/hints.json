@@ -1,0 +1,7 @@
+{
+  "pistas": [
+    { "nivel": 1, "texto": "Después de filtrar, revisa si el inventario original sigue teniendo todos sus productos." },
+    { "nivel": 2, "texto": "¿Qué hacen métodos como splice sobre el arreglo en el que se llaman?" },
+    { "nivel": 3, "texto": "La función usa splice directamente sobre el inventario recibido, mutándolo. Prueba con un método que devuelva un nuevo arreglo, como filter." }
+  ]
+}

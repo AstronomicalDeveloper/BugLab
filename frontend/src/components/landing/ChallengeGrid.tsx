@@ -12,7 +12,7 @@ export function ChallengeGrid() {
   const progress = useProgress();
 
   const resolved = mockChallenges.filter(
-    (challenge) => resolveStatus(progress, challenge.id, challenge.status) === "resuelto",
+    (challenge) => resolveStatus(progress, challenge.code, challenge.status) === "resuelto",
   ).length;
 
   return (
@@ -38,7 +38,7 @@ export function ChallengeGrid() {
           <ChallengeCard
             key={challenge.id}
             challenge={challenge}
-            status={resolveStatus(progress, challenge.id, challenge.status)}
+            status={resolveStatus(progress, challenge.code, challenge.status)}
           />
         ))}
       </div>
