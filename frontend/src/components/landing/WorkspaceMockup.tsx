@@ -2,80 +2,74 @@ import { IconLock } from "../../lib/icons";
 import { cn } from "../../lib/cn";
 
 /**
- * Recreación estática de la pantalla principal del desafío (Propuesta §4):
- * Explorador + Editor + Panel del caso, con la franja de pruebas abajo.
+ * Recreación estática de la pantalla del desafío, con las tres zonas reales:
+ * archivos y pistas a la izquierda, el trabajo al centro, el contexto del caso
+ * a la derecha.
  *
- * No es interactiva y no comparte código con el workspace real. Cumple dos
- * funciones: mostrar el producto en uso y dejar ver los tres niveles de
- * vidrio (§15) trabajando juntos — explorador y panel del caso en nivel 2,
- * editor y pruebas en nivel 3.
+ * El contenido es el de BUG-002 tal como lo sirve el backend
+ * (`backend/challenges/BUG-002/`): mismos archivos, mismo código semilla,
+ * mismos nombres de test y mismo reporte. Si ese caso cambia, esto queda
+ * desactualizado y hay que reflejarlo acá.
+ *
+ * No es interactiva y no comparte código con la pantalla real. Además de
+ * mostrar el producto, deja ver los tres niveles de vidrio (§15) juntos:
+ * los paneles laterales en nivel 2, el editor y las pruebas en nivel 3.
  */
 
-type TokenKind = "kw" | "str" | "fn" | "com" | "punct" | "plain";
+type TokenKind = "kw" | "str" | "fn" | "punct" | "plain";
 
 const tokenClass: Record<TokenKind, string> = {
   kw: "text-accent",
   str: "text-cyan",
   fn: "text-action",
-  com: "text-ink-muted/60",
   punct: "text-ink-muted",
   plain: "text-ink/90",
 };
 
 type Token = [string, TokenKind];
 
+/** files/validation.js — copia literal del código semilla de BUG-002. */
 const codeLines: Token[][] = [
-  [["import", "kw"], [" { useEffect } ", "plain"], ["from", "kw"], [' "react"', "str"], [";", "punct"]],
-  [["import", "kw"], [" { useProductForm } ", "plain"], ["from", "kw"], [' "../hooks"', "str"], [";", "punct"]],
+  [["export function ", "kw"], ["shouldShowErrors", "fn"], ["(hasSubmitted) {", "punct"]],
+  [["  return ", "kw"], ["true", "kw"], [";", "punct"]],
+  [["}", "punct"]],
   [],
-  [["export function ", "kw"], ["ProductForm", "fn"], ["({ visible }) {", "punct"]],
-  [["  const", "kw"], [" { values, validate, errors } ", "plain"], ["=", "punct"], [" useProductForm", "fn"], ["();", "punct"]],
-  [],
-  [["  useEffect", "fn"], ["(() ", "punct"], ["=>", "kw"], [" {", "punct"]],
-  [["    validate", "fn"], ["(values);", "punct"]],
-  [["  }, []);", "punct"]],
-  [],
-  [["  return", "kw"], [" (", "punct"]],
-  [["    <form ", "punct"], ["hidden", "fn"], ["={!visible}>", "punct"]],
-  [["      {errors.name ", "plain"], ["&&", "kw"], [" <span>{errors.name}</span>}", "plain"]],
-  [["    </form>", "punct"]],
-  [["  );", "punct"]],
+  [["export function ", "kw"], ["validateProduct", "fn"], ["(values) {", "punct"]],
+  [["  const", "kw"], [" errors ", "plain"], ["= {};", "punct"]],
+  [["  if", "kw"], [" (!values.name ", "plain"], ["||", "kw"], [" values.name.", "plain"], ["trim", "fn"], ["() === ", "punct"], ['""', "str"], [") {", "punct"]],
+  [["    errors.name = ", "plain"], ['"El nombre es obligatorio."', "str"], [";", "punct"]],
+  [["  }", "punct"]],
+  [["  if", "kw"], [" (!values.price ", "plain"], ["||", "kw"], [" ", "plain"], ["Number", "fn"], ["(values.price) <= ", "punct"], ["0", "plain"], [") {", "punct"]],
+  [["    errors.price = ", "plain"], ['"El precio debe ser mayor que cero."', "str"], [";", "punct"]],
+  [["  }", "punct"]],
+  [["  return", "kw"], [" errors;", "plain"]],
   [["}", "punct"]],
 ];
 
-/** Línea que el estudiante acaba investigando. Se marca, no se explica. */
-const suspectLine = 9;
-
-interface TreeEntry {
-  label: string;
-  depth: number;
-  kind: "folder" | "file";
-  active?: boolean;
+interface FileEntry {
+  path: string;
+  editable?: boolean;
   readonly?: boolean;
 }
 
-const fileTree: TreeEntry[] = [
-  { label: "src", depth: 0, kind: "folder" },
-  { label: "components", depth: 1, kind: "folder" },
-  { label: "ProductPage.jsx", depth: 2, kind: "file" },
-  { label: "ProductModal.jsx", depth: 2, kind: "file" },
-  { label: "ProductForm.jsx", depth: 2, kind: "file", active: true },
-  { label: "hooks", depth: 1, kind: "folder" },
-  { label: "useProductForm.js", depth: 2, kind: "file" },
-  { label: "tests", depth: 0, kind: "folder" },
-  { label: "ProductForm.test.jsx", depth: 1, kind: "file", readonly: true },
+/** `arbolArchivos` de BUG-002. El editable es el único que se abre. */
+const files: FileEntry[] = [
+  { path: "files/RegisterPage.jsx" },
+  { path: "files/RegisterForm.jsx" },
+  { path: "files/validation.js", editable: true },
+  { path: "tests/validation.test.js", readonly: true },
 ];
 
-/** Los cinco tests del resultado parcial de la Propuesta §9. */
-const testRows = [
-  { name: "El modal comienza cerrado", passed: true },
-  { name: "El formulario acepta datos válidos", passed: true },
-  { name: "No debe mostrar errores antes de abrirse", passed: false },
-  { name: "La validación ocurre demasiado pronto", passed: false },
-  { name: "El envío funciona correctamente", passed: true },
+/** Los dos tests reales del caso. Con el bug intacto, pasa uno solo. */
+const tests = [
+  { name: "No muestra errores antes de enviar", passed: false },
+  { name: "Muestra errores después de enviar", passed: true },
 ];
 
-const passedCount = testRows.filter((test) => test.passed).length;
+const passedCount = tests.filter((test) => test.passed).length;
+
+/** `arquitectura.flujo` de BUG-002. */
+const flow = ["RegisterPage", "RegisterForm", "validation.js"];
 
 export function WorkspaceMockup() {
   return (
@@ -85,9 +79,10 @@ export function WorkspaceMockup() {
           Todo el caso cabe en una pantalla
         </h2>
         <p className="max-w-[54ch] text-sm leading-relaxed text-ink-muted">
-          El reporte, la arquitectura, los archivos, el editor y las pruebas
-          conviven en el mismo espacio. Investigas sin perder el hilo saltando
-          entre pestañas, y sin montar un entorno de desarrollo para empezar.
+          Los archivos y las pistas a un lado, el reporte y la arquitectura al
+          otro, y el editor con las pruebas al centro. Investigas sin perder el
+          hilo saltando entre pestañas, y sin montar un entorno de desarrollo
+          para empezar.
         </p>
       </div>
 
@@ -108,71 +103,72 @@ export function WorkspaceMockup() {
               Intermedio
             </span>
             <span className="shrink-0 font-mono text-[10px] text-ink-muted">
-              {passedCount}/{testRows.length} tests
+              {passedCount}/{tests.length} tests
             </span>
           </div>
 
-          {/* Explorador · Editor · Panel del caso */}
           <div
-            className="flex min-h-[19rem] flex-col lg:flex-row"
+            className="flex min-h-[21rem] flex-col lg:flex-row"
             aria-hidden="true"
           >
-            {/* Explorador — vidrio nivel 2 */}
-            <div className="glass-2 hidden w-52 shrink-0 rounded-none border-y-0 border-l-0 p-3 lg:block">
-              <p className="mb-3 font-mono text-[10px] tracking-wide text-ink-muted">
-                EXPLORADOR
-              </p>
-              <ul className="space-y-0.5">
-                {fileTree.map((entry) => (
-                  <li key={entry.label}>
-                    <span
-                      style={{ paddingLeft: entry.depth * 12 }}
-                      className={cn(
-                        "flex items-center gap-1.5 rounded px-1.5 py-1 font-mono text-[11px]",
-                        entry.active
-                          ? "bg-accent/12 text-accent-soft"
-                          : entry.kind === "folder"
-                            ? "text-ink-muted"
-                            : "text-ink/75",
-                      )}
-                    >
-                      {entry.kind === "folder" && (
-                        <span className="text-[8px] opacity-70">▼</span>
-                      )}
-                      <span className="truncate">{entry.label}</span>
-                      {entry.readonly && (
-                        <IconLock className="h-3 w-3 shrink-0 opacity-50" />
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+            {/* Izquierda — archivos y pistas. Vidrio nivel 2. */}
+            <div className="glass-2 hidden w-56 shrink-0 flex-col gap-4 rounded-none border-y-0 border-l-0 p-3.5 lg:flex">
+              <div>
+                <p className="mb-2.5 font-mono text-[10px] tracking-wide text-ink-muted">
+                  ARCHIVOS DEL CASO
+                </p>
+                <ul className="space-y-0.5">
+                  {files.map((file) => (
+                    <li key={file.path}>
+                      <span
+                        className={cn(
+                          "flex items-center gap-1.5 rounded px-1.5 py-1 font-mono text-[10.5px]",
+                          file.editable
+                            ? "border border-accent/35 bg-accent/12 text-accent-soft"
+                            : "text-ink/70",
+                        )}
+                      >
+                        <span className="truncate">{file.path}</span>
+                        {file.readonly && (
+                          <IconLock className="h-3 w-3 shrink-0 opacity-50" />
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="border-t border-line pt-3.5">
+                <p className="mb-2 font-mono text-[10px] tracking-wide text-ink-muted">
+                  PISTAS
+                </p>
+                <p className="text-[11.5px] leading-relaxed text-ink-muted">
+                  Intenta encontrar la causa por tu cuenta primero.
+                </p>
+                <div className="mt-2.5 flex items-center justify-between gap-2">
+                  <span className="font-mono text-[10px] text-ink-muted">
+                    0/3 usadas
+                  </span>
+                  <span className="rounded-md border border-accent/40 bg-accent/12 px-2 py-1 font-mono text-[10px] text-accent-soft">
+                    Ver pista
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Editor — vidrio nivel 3, casi sólido */}
+            {/* Centro — editor y pruebas. Vidrio nivel 3, casi sólido. */}
             <div className="glass-3 flex min-w-0 flex-1 flex-col rounded-none border-y-0">
               <div className="flex items-center gap-1 border-b border-line px-2 pt-2">
                 <span className="flex items-center gap-2 rounded-t border border-b-0 border-line bg-panel/60 px-3 py-1.5 font-mono text-[11px] text-ink">
-                  ProductForm.jsx
-                  <span className="h-1.5 w-1.5 rounded-full bg-warning" />
-                </span>
-                <span className="px-3 py-1.5 font-mono text-[11px] text-ink-muted">
-                  useProductForm.js
+                  validation.js
                 </span>
               </div>
 
-              <div className="flex-1 overflow-x-auto p-3">
-                <pre className="font-mono text-[11px] leading-[1.65]">
+              <div className="overflow-x-auto p-3">
+                <pre className="font-mono text-[11px] leading-[1.6]">
                   <code>
                     {codeLines.map((tokens, index) => (
-                      <div
-                        key={index}
-                        className={cn(
-                          "flex",
-                          index + 1 === suspectLine &&
-                            "-mx-3 border-l-2 border-error/60 bg-error/8 px-3",
-                        )}
-                      >
+                      <div key={index} className="flex">
                         <span className="w-7 shrink-0 pr-3 text-right text-ink-muted/45 select-none">
                           {index + 1}
                         </span>
@@ -188,80 +184,92 @@ export function WorkspaceMockup() {
                   </code>
                 </pre>
               </div>
+
+              <div className="mt-auto border-t border-line px-3 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="rounded-md border border-action/60 bg-action px-3 py-1.5 font-mono text-[11px] font-medium text-[#0c1220]">
+                    Ejecutar tests
+                  </span>
+                  <span className="font-mono text-[11px] text-ink-muted">
+                    <span className="text-error">
+                      {passedCount}/{tests.length}
+                    </span>{" "}
+                    pruebas superadas
+                  </span>
+                </div>
+
+                <ul className="mt-3 space-y-1.5">
+                  {tests.map((test) => (
+                    <li
+                      key={test.name}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md border px-3 py-2 font-mono text-[11px]",
+                        test.passed
+                          ? "border-success/35 bg-success/10 text-success"
+                          : "border-error/35 bg-error/10 text-error",
+                      )}
+                    >
+                      <span>{test.passed ? "✓" : "✕"}</span>
+                      <span className="truncate">{test.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
-            {/* Panel del caso — vidrio nivel 2 */}
-            <div className="glass-2 hidden w-72 shrink-0 rounded-none border-y-0 border-r-0 p-4 lg:block">
-              <div className="flex gap-1">
-                <span className="rounded border border-accent/40 bg-accent/12 px-2 py-1 font-mono text-[10px] text-accent-soft">
-                  Reporte
-                </span>
-                <span className="px-2 py-1 font-mono text-[10px] text-ink-muted">
-                  Arquitectura
-                </span>
-                <span className="px-2 py-1 font-mono text-[10px] text-ink-muted">
-                  Pistas
-                </span>
+            {/* Derecha — reporte y arquitectura. Vidrio nivel 2. */}
+            <div className="glass-2 hidden w-72 shrink-0 flex-col gap-4 rounded-none border-y-0 border-r-0 p-4 lg:flex">
+              <div>
+                <p className="mb-2.5 font-mono text-[10px] tracking-wide text-ink-muted">
+                  REPORTE
+                </p>
+                <p className="text-[11px] font-semibold text-ink">Síntoma</p>
+                <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
+                  Al abrir el formulario para crear un producto, ya se muestran
+                  mensajes de error, aunque el usuario todavía no ha escrito ni
+                  enviado nada.
+                </p>
+
+                <p className="mt-3 text-[11px] font-semibold text-ink">
+                  Comportamiento esperado
+                </p>
+                <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
+                  El formulario debe mostrarse limpio al abrirse. Los errores
+                  solo deben aparecer después de intentar enviarlo.
+                </p>
               </div>
 
-              <p className="mt-5 font-mono text-[10px] text-error">SÍNTOMA</p>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink/85">
-                El formulario muestra mensajes de validación antes de que el
-                usuario lo haya abierto.
-              </p>
-
-              <p className="mt-5 font-mono text-[10px] text-success">
-                COMPORTAMIENTO ESPERADO
-              </p>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink/85">
-                Los errores solo deben aparecer cuando corresponda según la
-                interacción definida.
-              </p>
-
-              <p className="mt-5 border-l-2 border-accent bg-accent/5 py-2 pl-3 text-[12.5px] leading-relaxed text-ink-muted italic">
-                Abro la ficha del producto y ya me aparece todo en rojo.
-              </p>
+              <div className="border-t border-line pt-3.5">
+                <p className="mb-2.5 font-mono text-[10px] tracking-wide text-ink-muted">
+                  ARQUITECTURA
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {flow.map((node, index) => (
+                    <span key={node} className="flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          "rounded border px-2 py-1 font-mono text-[10px]",
+                          index === flow.length - 1
+                            ? "border-accent/45 bg-accent/12 text-accent-soft"
+                            : "border-line bg-white/[0.04] text-ink-muted",
+                        )}
+                      >
+                        {node}
+                      </span>
+                      {index < flow.length - 1 && (
+                        <span className="text-[10px] text-ink-muted/60">→</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-
-          {/* Panel de pruebas — vidrio nivel 3 */}
-          <div
-            className="glass-3 rounded-none border-x-0 border-b-0 px-4 py-3"
-            aria-hidden="true"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <p className="font-mono text-[11px] text-ink-muted">
-                <span className="text-ink">
-                  {passedCount} / {testRows.length}
-                </span>{" "}
-                pruebas superadas
-              </p>
-              <span className="rounded-md border border-action/60 bg-action px-3 py-1.5 font-mono text-[11px] font-medium text-[#0c1220]">
-                Ejecutar tests
-              </span>
-            </div>
-
-            <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
-              {testRows.map((test) => (
-                <li
-                  key={test.name}
-                  className="flex items-center gap-2 font-mono text-[11px]"
-                >
-                  <span
-                    className={test.passed ? "text-success" : "text-error"}
-                  >
-                    {test.passed ? "✓" : "✕"}
-                  </span>
-                  <span className="truncate text-ink-muted">{test.name}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
 
         <figcaption className="mt-4 text-center text-xs text-ink-muted">
-          BUG-002 en curso: el explorador y el panel del caso a los lados, el
-          editor y las pruebas al centro.
+          BUG-002 en curso, con el código y las pruebas reales del caso: una de
+          las dos pruebas todavía falla.
         </figcaption>
       </figure>
     </section>

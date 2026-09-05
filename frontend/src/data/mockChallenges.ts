@@ -10,12 +10,12 @@ export const mockChallenges: Challenge[] = [
   {
     id: "bug-001",
     code: "BUG-001",
-    title: "El corte de los 18",
+    title: "El usuario de 18 años no puede registrarse",
     difficulty: "facil",
     status: "pendiente",
     summary:
-      "Una persona que cumple 18 años hoy no puede registrarse. El formulario le dice que es menor de edad.",
-    concepts: ["Operadores de comparación", "Casos límite"],
+      "Quien ingresa exactamente 18 años recibe un error al registrarse, aunque el requisito dice que 18 es una edad válida.",
+    concepts: ["Condiciones de frontera", "Lectura de requisitos"],
     report: {
       symptom:
         "El sistema de registro está rechazando a personas que cumplen 18 años justo hoy. Atención al cliente recibió varios reclamos esta semana.",
@@ -65,12 +65,12 @@ export const mockChallenges: Challenge[] = [
   {
     id: "bug-002",
     code: "BUG-002",
-    title: "El formulario que no se quiere ir",
+    title: "El formulario se valida antes de abrirse",
     difficulty: "intermedio",
     status: "pendiente",
     summary:
-      "Al reabrir un formulario emergente aparecen errores de validación que nadie provocó, como si nunca se hubiera cerrado.",
-    concepts: ["Ciclo de vida de componentes", "Efectos en React"],
+      "Al abrir el formulario ya se ven mensajes de error, aunque el usuario todavía no escribió ni envió nada.",
+    concepts: ["Ciclo de vida y estado", "Momento de la validación"],
     report: {
       symptom:
         "Cuando alguien cierra un formulario emergente y lo vuelve a abrir, a veces ve datos o errores de validación que no deberían estar ahí, como si el formulario nunca se hubiera cerrado del todo.",
@@ -120,12 +120,12 @@ export const mockChallenges: Challenge[] = [
   {
     id: "bug-003",
     code: "BUG-003",
-    title: "El inventario que cambia solo",
+    title: "Filtrar productos altera el inventario original",
     difficulty: "dificil",
     status: "pendiente",
     summary:
-      "Filtrar productos por categoría hace desaparecer artículos del inventario general, como si el filtro los borrara.",
-    concepts: ["Mutación por referencia", "Métodos de arreglos"],
+      "Al aplicar el filtro 'Solo disponibles', algunos productos desaparecen del inventario incluso después de quitar el filtro.",
+    concepts: ["Referencias y mutabilidad", "Efectos secundarios"],
     report: {
       symptom:
         "Cada vez que alguien filtra el inventario por categoría en el panel de administración, algunos productos desaparecen del inventario general, como si el filtro borrara cosas de verdad.",
