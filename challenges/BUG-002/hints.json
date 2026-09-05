@@ -1,0 +1,7 @@
+{
+  "pistas": [
+    { "nivel": 1, "texto": "Fíjate en qué momento se calculan los errores por primera vez: ¿ocurre por algo que hizo el usuario, o antes?" },
+    { "nivel": 2, "texto": "Revisa la función que decide si mostrar errores. ¿Depende de si el usuario ya envió el formulario?" },
+    { "nivel": 3, "texto": "La función que decide mostrar errores siempre devuelve true, sin revisar si el formulario ya fue enviado." }
+  ]
+}
