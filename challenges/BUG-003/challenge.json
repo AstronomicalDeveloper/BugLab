@@ -1,0 +1,38 @@
+{
+  "id": "BUG-003",
+  "titulo": "Filtrar productos altera el inventario original",
+  "nivel": "dificil",
+  "aprendizajePrincipal": "Referencias, mutabilidad, estado compartido y efectos secundarios",
+  "reporte": {
+    "sintoma": "Al aplicar el filtro 'Solo disponibles', algunos productos desaparecen del inventario incluso después de quitar el filtro.",
+    "comportamientoEsperado": "Filtrar debe devolver solo los productos disponibles, sin alterar el inventario original ni afectar consultas posteriores.",
+    "pasosParaReproducir": [
+      "Cargar el inventario completo",
+      "Activar 'Solo disponibles'",
+      "Desactivar el filtro",
+      "Observar que el inventario ya no tiene todos los productos originales"
+    ]
+  },
+  "arquitectura": {
+    "componentes": [
+      { "nombre": "RegisterPage", "descripcion": "Página contenedora del inventario" },
+      { "nombre": "RegisterForm", "descripcion": "Componente que muestra el inventario y el control de filtro" },
+      { "nombre": "validation.js", "descripcion": "Módulo con la lógica de filtrado" }
+    ],
+    "flujo": "RegisterPage → RegisterForm → validation.js"
+  },
+  "arbolArchivos": [
+    "files/RegisterPage.jsx",
+    "files/RegisterForm.jsx",
+    "files/validation.js",
+    "tests/validation.test.js"
+  ],
+  "archivoEditable": {
+    "ruta": "files/validation.js"
+  },
+  "tests": [
+    { "id": "only-available", "descripcion": "Devuelve solo los productos disponibles", "esperado": "Todos los elementos del resultado tienen available = true" },
+    { "id": "no-mutation", "descripcion": "No altera el tamaño del inventario original al filtrar", "esperado": "El inventario conserva su cantidad original de productos" },
+    { "id": "idempotent", "descripcion": "Filtrar dos veces seguidas da el mismo resultado", "esperado": "Ambas llamadas devuelven la misma cantidad de productos" }
+  ]
+}
