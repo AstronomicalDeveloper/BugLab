@@ -2,114 +2,97 @@
 
 # 🐛 BugLab
 
-![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Vite](https://img.shields.io/badge/Vite-Fast-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Node](https://img.shields.io/badge/Node.js-Express-339933?style=for-the-badge&logo=node.js&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-Testing-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
-![Status](https://img.shields.io/badge/Estado-Completo-brightgreen?style=for-the-badge)
+**Aprender debugging investigando errores en pequeños sistemas simulados.**
 
-**🔗 [Ver demo en producción](http://buglab.astrodev.pe/)**
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js&logoColor=white)
+![Vitest](https://img.shields.io/badge/Tests-Vitest-6E9F18?logo=vitest&logoColor=white)
+![Estado](https://img.shields.io/badge/Estado-MVP%20de%20hackathon-informational)
+
+**BRODT Hackathon 2026 · Future of Education**
 
 </div>
 
-## 1. Nombre y Misión
+> **Estado del proyecto:** prototipo desarrollado para una hackathon. Se conserva como proyecto educativo y de portafolio; la demo pública se retirará. **No está preparado para ejecutar código no confiable en un servicio público.** Consulta [limitaciones y aprendizajes](docs/lessons-learned.md).
 
-**BugLab** — entorno educativo de debugging que enseña a investigar y resolver fallos reales dentro de sistemas simulados, mediante retos con reporte, arquitectura y tests automáticos.
+## ¿Qué es BugLab?
 
----
+BugLab propone practicar una habilidad que suele quedar fuera de los ejercicios introductorios: investigar por qué falla **un sistema existente**.
 
-## 2. Problema & Enfoque Lean
+Cada desafío incluye un reporte de bug, contexto arquitectónico, archivos para explorar, código editable, pistas progresivas y validación mediante pruebas automatizadas. Las pruebas evalúan el comportamiento esperado, no una única respuesta textual.
 
-**Problema:** los estudiantes de programación tienen pocas oportunidades de practicar debugging estructurado sobre código ajeno; la mayoría de ejercicios enseña a escribir código desde cero, no a diagnosticar fallos existentes.
+### Desafíos del MVP
 
-**Usuario objetivo:** estudiantes universitarios de software, participantes de bootcamps y autodidactas que ya conocen fundamentos de programación y necesitan practicar cómo investigar fallos.
+| Reto | Nivel | Problema |
+| --- | --- | --- |
+| BUG-001 | Fácil | Una condición excluye a personas de exactamente 18 años |
+| BUG-002 | Intermedio | Un formulario oculto se valida antes de abrirse |
+| BUG-003 | Difícil | Un filtro modifica el inventario original debido a referencias compartidas |
 
-**MVP (completo):** 3 desafíos de debugging (fácil, intermedio y difícil), cada uno con reporte de bug, arquitectura simplificada, árbol de archivos, código editable, pistas progresivas, tests de comportamiento automáticos y explicación final.
+## Tecnologías
 
-```
-🟢  BUG-001 — FÁCIL         Condición excluye usuarios de 18 años exactos
-🟡  BUG-002 — INTERMEDIO    Formulario oculto se valida antes de abrirse
-🔴  BUG-003 — DIFÍCIL       Filtro muta el inventario original por referencia
-```
+- **Frontend:** React 19, Vite, TypeScript.
+- **Backend:** Node.js, Express, TypeScript.
+- **Validación:** Vitest y React Testing Library para los casos que lo requieren.
+- **Ejecución:** runner basado en Docker para aislar pruebas de código.
+- **Contenido:** desafíos y metadatos definidos en archivos JSON.
 
----
+> Docker por sí solo no garantiza un entorno seguro. Los límites y controles del prototipo no deben interpretarse como una auditoría de seguridad.
 
-## 3. Stack Tecnológico
+## Cómo explorar el proyecto localmente
 
-| Capa | Tecnología | Rol |
-|---|---|---|
-| 🎨 Frontend | React + Vite + TypeScript | Interfaz, editor, navegación de casos |
-| ⚙️ Backend | Node.js + Express + TypeScript | Validación de soluciones |
-| 🔒 Aislamiento | Docker + Sandbox | Ejecución segura del código del estudiante |
-| ✅ Testing | Vitest + React Testing Library | Validación de comportamiento |
-| 📦 Datos | JSON | Reportes, arquitectura, pistas, explicaciones |
-| 💾 Progreso | localStorage | Progreso local opcional, sin cuentas |
-| ☁️ Despliegue | http://buglab.astrodev.pe/ | Frontend y backend en producción |
-
----
-
-## 4. Cómo usar BugLab
-
-1. Entra a la [demo en producción](http://buglab.astrodev.pe/)
-2. Elige un desafío (BUG-001, BUG-002 o BUG-003)
-3. Lee el reporte del bug y revisa la arquitectura del mini-sistema
-4. Explora el árbol de archivos y edita el código en el editor integrado
-5. Ejecuta los tests para validar tu solución
-6. Si te trabas, pide una pista progresiva
-7. Al resolverlo, lee la explicación final que conecta el bug con el concepto aprendido
-
----
-
-## 5. Setup Local (para desarrollo)
+**Requisitos:** Node.js y npm compatibles con las dependencias del proyecto. Para ejecutar validaciones se necesita Docker y la imagen del runner configurada en el backend.
 
 ```bash
-git clone https://github.com/AstronomicalDeveloper/BugLab
+git clone https://github.com/AstronomicalDeveloper/BugLab.git
 cd BugLab
 
-# Backend
+# Terminal 1
 cd backend
 npm install
 npm run dev
 
-# Frontend (en otra terminal)
+# Terminal 2 (desde la raíz del repositorio)
 cd frontend
 npm install
 npm run dev
 ```
 
----
+La interfaz puede requerir configurar la URL de la API según el entorno. Ejecutar validaciones requiere además preparar la imagen Docker `buglab-runner:latest` (o definir `BUGLAB_RUNNER_IMAGE`). No expongas la API a Internet para probar el prototipo.
 
-## 6. Testing
+### Comandos disponibles
 
 ```bash
+# Backend
 cd backend
+npm run build
 npm run test
+
+# Frontend
+cd frontend
+npm run build
+npm run lint
 ```
-Incluye pruebas de happy path (resolución correcta de un desafío) y de manejo de errores críticos (código con errores de sintaxis enviado a validar).
 
----
+Estos son comandos definidos por los paquetes; **no se afirma aquí que todos pasen actualmente**. La cobertura y la fiabilidad de las pruebas forman parte de las limitaciones documentadas.
 
-## 7. Documentación
+## Documentación
 
-- 📐 [Diagrama de Arquitectura](docs/architecture.md)
-- 🎤 [Pitch Deck](docs/pitch.pdf)
+- [Arquitectura](docs/architecture.md)
+- [Aprendizajes y limitaciones conocidas](docs/lessons-learned.md)
 
----
+## Equipo
 
-## 8. Integrantes & Roles
+| Integrante | GitHub | Contribución |
+| --- | --- | --- |
+| Piero Alfonso Paredes Galvez | [@pieroparedesg](https://github.com/pieroparedesg) | Diseño y creación de desafíos |
+| Wilson Oswaldo Carrasco Farroñan | [@WilsonOCF](https://github.com/WilsonOCF) | Frontend |
+| Bastian Arias Mandarachi | [@Armand-Pat](https://github.com/Armand-Pat) | Frontend |
+| Landry Bardales Guadalupe | [@AstronomicalDeveloper](https://github.com/AstronomicalDeveloper) | Backend y validación |
 
-| Nombre completo | Usuario de GitHub | Rol |
-|---|---|---|
-| Piero Alfonso Paredes Galvez | @pieroparedesg | Diseño y creación de retos (bugs) |
-| Wilson Oswaldo Carrasco Farroñan | @WilsonOCF | Frontend |
-| Bastian Arias Mandarachi | @Armand-Pat | Frontend |
-| Landry Nicol Bardales Guadalupe | @AstronomicalDeveloper | Backend |
+## Alcance y continuidad
 
----
+El proyecto se presenta tal como surgió en la hackathon, con sus decisiones de alcance y oportunidades de mejora. No se ofrece como plataforma de producción, ni se garantiza un servicio online activo.
 
-<div align="center">
-
-**Hackathon BRODT 2026 — Track Future of Education**
-
-</div>
+Este repositorio es una muestra del trabajo y del aprendizaje técnico del equipo.
