@@ -1,70 +1,47 @@
 # Arquitectura — BugLab
 
-## 1. Visión general
+## Visión general
 
-BugLab es una aplicación web con arquitectura frontend/backend desacoplada. El frontend gestiona la experiencia del estudiante (lectura del caso, edición de código); el backend ejecuta la validación de la solución de forma aislada (sandbox/Docker) y devuelve los resultados de los tests.
+BugLab separa la interfaz de aprendizaje (React, Vite y TypeScript) de la API de validación (Node.js, Express y TypeScript). Los desafíos y sus archivos están definidos en el backend; el runner utiliza Docker para ejecutar las pruebas del caso y devolver los resultados.
 
 ```mermaid
-flowchart TB
-    subgraph Frontend["🎨 Frontend (React + Vite + TS)"]
-        UI[Interfaz del estudiante]
-        Editor[Editor de código]
-        Report[Reporte del bug]
-        Results[Resultados de tests]
-    end
-
-    subgraph Backend["⚙️ Backend (Node.js + Express + TS)"]
-        API[API de validación]
-        Runner[Motor de ejecución]
-    end
-
-    subgraph Sandbox["🔒 Aislamiento"]
-        Docker[Docker / Sandbox]
-        Vitest[Vitest + RTL]
-    end
-
-    subgraph Data["📦 Datos"]
-        JSON[(Casos en JSON)]
-        LocalStorage[(localStorage - progreso)]
-    end
-
-    UI --> Report
-    UI --> Editor
-    Editor -- "Enviar solución" --> API
-    API --> Runner
-    Runner --> Docker
-    Docker --> Vitest
-    Vitest -- "Resultados" --> Runner
-    Runner -- "Resultados" --> API
-    API -- "Respuesta JSON" --> Results
-    Results --> UI
-
-    JSON -.-> UI
-    JSON -.-> Runner
-    UI -.-> LocalStorage
+flowchart LR
+    U[Estudiante] --> F[Frontend React]
+    F -->|POST /api/validation/:challengeId| A[API Express]
+    A --> R[Runner]
+    R --> D[Contenedor Docker]
+    D --> T[Pruebas Vitest / RTL]
+    T --> R
+    R --> A
+    A --> F
+    J[Casos JSON] --> A
 ```
 
-## 2. Módulos
+## Componentes
 
-| Módulo | Ubicación | Responsabilidad |
-|---|---|---|
-| UI del caso | `frontend/src` | Mostrar reporte, arquitectura simplificada, árbol de archivos y editor |
-| API de validación | `backend/src` | Recibir la solución del estudiante y coordinar la ejecución |
-| Casos (challenges) | `backend/challenges/BUG-001..003` | Definición de cada reto: código inicial, tests, pistas, explicación |
-| Sandbox | `backend/sandbox`, `backend/docker` | Aislar la ejecución de código enviado por el estudiante |
-| Motor de tests | Vitest + React Testing Library | Validar comportamiento observable, no comparación exacta de código |
+| Componente | Ubicación | Función |
+| --- | --- | --- |
+| Interfaz | `frontend/src` | Presentar retos, editor y resultados |
+| API | `backend/src/server.ts` y `backend/src/routes` | Exponer casos y validaciones |
+| Runner | `backend/src/services/runner.service.ts` | Preparar y ejecutar el entorno de validación |
+| Casos | `backend/challenges/BUG-001..003` | Metadatos, código y pruebas de los retos |
 
-## 3. Comunicación Frontend ↔ Backend
+## Flujo de validación
 
 ```mermaid
 sequenceDiagram
-    participant E as Estudiante (Frontend)
-    participant A as API (Backend)
-    participant S as Sandbox (Docker)
-
-    E->>A: POST /api/challenges/:id/submit (código editado)
-    A->>S: Ejecutar código en entorno aislado
-    S->>S: Correr tests de comportamiento (Vitest)
-    S-->>A: Resultado (pasa/falla por test)
-    A-->>E: JSON con resultados + pistas disponibles
+    participant E as Estudiante
+    participant A as API
+    participant R as Runner Docker
+    E->>A: POST /api/validation/:challengeId {files}
+    A->>R: Validar archivos y preparar ejecución
+    R->>R: Ejecutar pruebas del reto
+    R-->>A: Resultado de validación
+    A-->>E: JSON con tests y estado
 ```
+
+El payload contiene una lista de archivos editados con `path` y `content`. Las rutas permitidas se determinan a partir de la configuración del desafío. El contenedor devuelve la información que el backend utiliza para reportar el resultado.
+
+## Advertencia de seguridad
+
+El uso de Docker y las validaciones de rutas son medidas parciales. Esta versión **no debe desplegarse como servicio público de ejecución de código no confiable** sin implementar y verificar los controles señalados en [aprendizajes y limitaciones](lessons-learned.md).
