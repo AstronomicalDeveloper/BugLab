@@ -1,48 +1,50 @@
 <div align="center">
 
+**English** | [Español](README.es.md)
+
 # 🐛 BugLab
 
-**Aprender debugging investigando errores en pequeños sistemas simulados.**
+**Learn debugging by investigating bugs in small, simulated software systems.**
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Tests-Vitest-6E9F18?logo=vitest&logoColor=white)
-![Estado](https://img.shields.io/badge/Estado-MVP%20de%20hackathon-informational)
+![Status](https://img.shields.io/badge/Status-Hackathon%20MVP-informational)
 
 **BRODT Hackathon 2026 · Future of Education**
 
 </div>
 
-> **Estado del proyecto:** prototipo desarrollado para una hackathon. Se conserva como proyecto educativo y de portafolio; la demo pública se retirará. **No está preparado para ejecutar código no confiable en un servicio público.** Consulta [limitaciones y aprendizajes](docs/lessons-learned.md).
+> **Project status:** This prototype was developed for a hackathon and is now maintained as an educational and portfolio project. The public demo has been taken offline. **It is not suitable for running untrusted code as a public service.** See [known limitations and lessons learned](docs/lessons-learned.md) (in Spanish).
 
-## ¿Qué es BugLab?
+## What is BugLab?
 
-BugLab propone practicar una habilidad que suele quedar fuera de los ejercicios introductorios: investigar por qué falla **un sistema existente**.
+BugLab focuses on an important programming skill that introductory exercises can overlook: investigating why **an existing system** behaves incorrectly.
 
-Cada desafío incluye un reporte de bug, contexto arquitectónico, archivos para explorar, código editable, pistas progresivas y validación mediante pruebas automatizadas. Las pruebas evalúan el comportamiento esperado, no una única respuesta textual.
+Each challenge includes a bug report, architectural context, files to explore, editable code, progressive hints, and automated tests. Tests check the expected behavior rather than comparing a submission against one predefined solution.
 
-### Desafíos del MVP
+### MVP challenges
 
-| Reto | Nivel | Problema |
+| Challenge | Difficulty | Bug |
 | --- | --- | --- |
-| BUG-001 | Fácil | Una condición excluye a personas de exactamente 18 años |
-| BUG-002 | Intermedio | Un formulario oculto se valida antes de abrirse |
-| BUG-003 | Difícil | Un filtro modifica el inventario original debido a referencias compartidas |
+| BUG-001 | Easy | A condition excludes users who are exactly 18 years old |
+| BUG-002 | Intermediate | A hidden form is validated before it is opened |
+| BUG-003 | Hard | Filtering changes the original inventory through shared references |
 
-## Tecnologías
+## Tech stack
 
 - **Frontend:** React 19, Vite, TypeScript.
 - **Backend:** Node.js, Express, TypeScript.
-- **Validación:** Vitest y React Testing Library para los casos que lo requieren.
-- **Ejecución:** runner basado en Docker para aislar pruebas de código.
-- **Contenido:** desafíos y metadatos definidos en archivos JSON.
+- **Testing:** Vitest and React Testing Library for the applicable challenges.
+- **Execution:** Docker-based runner used to isolate code tests.
+- **Content:** Challenge definitions and metadata stored in JSON files.
 
-> Docker por sí solo no garantiza un entorno seguro. Los límites y controles del prototipo no deben interpretarse como una auditoría de seguridad.
+> Docker alone does not guarantee secure execution. The prototype's safeguards should not be interpreted as proof of a completed security audit.
 
-## Cómo explorar el proyecto localmente
+## Explore the project locally
 
-**Requisitos:** Node.js y npm compatibles con las dependencias del proyecto. Para ejecutar validaciones se necesita Docker y la imagen del runner configurada en el backend.
+**Requirements:** Node.js and npm versions compatible with the project's dependencies. Running code validation also requires Docker and the runner image configured for the backend.
 
 ```bash
 git clone https://github.com/AstronomicalDeveloper/BugLab.git
@@ -53,15 +55,15 @@ cd backend
 npm install
 npm run dev
 
-# Terminal 2 (desde la raíz del repositorio)
+# Terminal 2 (from the repository root)
 cd frontend
 npm install
 npm run dev
 ```
 
-La interfaz puede requerir configurar la URL de la API según el entorno. Ejecutar validaciones requiere además preparar la imagen Docker `buglab-runner:latest` (o definir `BUGLAB_RUNNER_IMAGE`). No expongas la API a Internet para probar el prototipo.
+Depending on your environment, the frontend may need its API URL configured. Validation additionally requires building the `buglab-runner:latest` Docker image (or setting `BUGLAB_RUNNER_IMAGE`). **Do not expose the API to the internet** to test this prototype.
 
-### Comandos disponibles
+### Available commands
 
 ```bash
 # Backend
@@ -75,24 +77,24 @@ npm run build
 npm run lint
 ```
 
-Estos son comandos definidos por los paquetes; **no se afirma aquí que todos pasen actualmente**. La cobertura y la fiabilidad de las pruebas forman parte de las limitaciones documentadas.
+These commands are declared in the corresponding packages; **their current success has not been independently verified here**. Test coverage and reliability remain documented limitations.
 
-## Documentación
+## Documentation
 
-- [Arquitectura](docs/architecture.md)
-- [Aprendizajes y limitaciones conocidas](docs/lessons-learned.md)
+- [Architecture](docs/architecture.md) (Spanish)
+- [Lessons learned and known limitations](docs/lessons-learned.md) (Spanish)
 
-## Equipo
+## Team
 
-| Integrante | GitHub | Contribución |
+| Team member | GitHub | Contribution |
 | --- | --- | --- |
-| Piero Alfonso Paredes Galvez | [@pieroparedesg](https://github.com/pieroparedesg) | Diseño y creación de desafíos |
+| Piero Alfonso Paredes Galvez | [@pieroparedesg](https://github.com/pieroparedesg) | Challenge design and creation |
 | Wilson Oswaldo Carrasco Farroñan | [@WilsonOCF](https://github.com/WilsonOCF) | Frontend |
 | Bastian Arias Mandarachi | [@Armand-Pat](https://github.com/Armand-Pat) | Frontend |
-| Landry Bardales Guadalupe | [@AstronomicalDeveloper](https://github.com/AstronomicalDeveloper) | Backend y validación |
+| Landry Bardales Guadalupe | [@AstronomicalDeveloper](https://github.com/AstronomicalDeveloper) | Backend and validation |
 
-## Alcance y continuidad
+## Scope and future work
 
-El proyecto se presenta tal como surgió en la hackathon, con sus decisiones de alcance y oportunidades de mejora. No se ofrece como plataforma de producción, ni se garantiza un servicio online activo.
+BugLab is presented as a hackathon MVP, including its original scope decisions and opportunities for improvement. It is **not** a production-ready platform, and no online demo is currently offered.
 
-Este repositorio es una muestra del trabajo y del aprendizaje técnico del equipo.
+This repository documents the team's implementation and technical learning.
